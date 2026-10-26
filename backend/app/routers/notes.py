@@ -1,46 +1,84 @@
-"""Note CRUD and search endpoints (architecture component: backend / Notes API).
+"""Note CRUD endpoints (architecture component: backend / Notes API, US-003-1).
 
-Stub routes, same placeholder convention as `app/routers/auth.py`: each
-reserves the path, method and request/response shape the approved API spec
-declares. Persistence, newest-first ordering and the full-text search over
-title and body (US-003 through US-010) are the development sprint's work.
-Every route here is guarded by `get_current_owner` (US-001, NFR-002): an
-unauthenticated request never reaches a handler body.
+Thin handlers: persistence, ownership scoping and the newest-updated-first
+ordering live in `app/services/notes.py`. Every route here is guarded by
+`get_current_owner` (US-001, NFR-002): an unauthenticated request never
+reaches a handler body.
 """
 
-from fastapi import APIRouter, Depends
+import uuid
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.database import get_db
 from app.dependencies import get_current_owner
-from app.schemas import NoteCreate, NoteUpdate, StubResponse
+from app.schemas import NoteCreate, NoteOut, NoteUpdate
+from app.services import notes as notes_service
 
 router = APIRouter(prefix="/notes", tags=["notes"], dependencies=[Depends(get_current_owner)])
 
 
-@router.get("", response_model=StubResponse)
-async def list_notes(q: str | None = None) -> StubResponse:
-    del q  # unused in the stub; accepted only to shape the OpenAPI query param
-    return StubResponse(endpoint="GET /notes")
+def _parse_note_id(note_id: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(note_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found") from None
 
 
-@router.post("", response_model=StubResponse, status_code=201)
-async def create_note(note: NoteCreate) -> StubResponse:
-    del note  # unused in the stub; accepted only to shape the OpenAPI body
-    return StubResponse(endpoint="POST /notes")
+@router.get("", response_model=list[NoteOut])
+async def list_notes(
+    q: str | None = None,
+    owner: str = Depends(get_current_owner),  # noqa: B008
+    db: Session = Depends(get_db),  # noqa: B008
+) -> list[NoteOut]:
+    del q  # full-text filtering is a later story; accepted only to shape the query param
+    notes = notes_service.list_notes(db, owner)
+    return [NoteOut.model_validate(note) for note in notes]
 
 
-@router.get("/{note_id}", response_model=StubResponse)
-async def get_note(note_id: str) -> StubResponse:
-    del note_id
-    return StubResponse(endpoint="GET /notes/{id}")
+@router.post("", response_model=NoteOut, status_code=status.HTTP_201_CREATED)
+async def create_note(
+    note: NoteCreate,
+    owner: str = Depends(get_current_owner),  # noqa: B008
+    db: Session = Depends(get_db),  # noqa: B008
+) -> NoteOut:
+    created = notes_service.create_note(db, owner, note)
+    return NoteOut.model_validate(created)
 
 
-@router.put("/{note_id}", response_model=StubResponse)
-async def update_note(note_id: str, note: NoteUpdate) -> StubResponse:
-    del note_id, note
-    return StubResponse(endpoint="PUT /notes/{id}")
+@router.get("/{note_id}", response_model=NoteOut)
+async def get_note(
+    note_id: str,
+    owner: str = Depends(get_current_owner),  # noqa: B008
+    db: Session = Depends(get_db),  # noqa: B008
+) -> NoteOut:
+    found = notes_service.get_note(db, owner, _parse_note_id(note_id))
+    if found is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+    return NoteOut.model_validate(found)
 
 
-@router.delete("/{note_id}", status_code=204)
-async def delete_note(note_id: str) -> None:
-    del note_id
+@router.put("/{note_id}", response_model=NoteOut)
+async def update_note(
+    note_id: str,
+    note: NoteUpdate,
+    owner: str = Depends(get_current_owner),  # noqa: B008
+    db: Session = Depends(get_db),  # noqa: B008
+) -> NoteOut:
+    updated = notes_service.update_note(db, owner, _parse_note_id(note_id), note)
+    if updated is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+    return NoteOut.model_validate(updated)
+
+
+@router.delete("/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_note(
+    note_id: str,
+    owner: str = Depends(get_current_owner),  # noqa: B008
+    db: Session = Depends(get_db),  # noqa: B008
+) -> None:
+    deleted = notes_service.delete_note(db, owner, _parse_note_id(note_id))
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
     return None

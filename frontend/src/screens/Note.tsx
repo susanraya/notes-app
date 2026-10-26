@@ -1,66 +1,73 @@
-// @ts-nocheck -- generated from the approved design under its JS runtime contract; not hand-written TypeScript.
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import React from "react";
+import * as React from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
 
 import * as UI from "@/lib/ui";
 import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
-import { useNavigate } from "@/lib/navigate";
+import { apiFetch } from "@/lib/api";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const { Button, Card, Input, Label, Select, Separator } = UI;
+const { Button, Input, Label, Separator } = UI;
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export interface NoteOut {
+  id: string;
+  title: string;
+  body: string;
+  updated_at: string;
+}
 
-const WHITE = [255, 255, 255];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const WHITE: [number, number, number] = [255, 255, 255];
 
-const hexToRgb = (hex) => {
-  const h = hex.replace('#', '');
-  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
-  return [parseInt(full.slice(0, 2), 16), parseInt(full.slice(2, 4), 16), parseInt(full.slice(4, 6), 16)];
+const hexToRgb = (hex: string): [number, number, number] => {
+  const h = hex.replace("#", "");
+  const full =
+    h.length === 3
+      ? h
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : h;
+  return [
+    parseInt(full.slice(0, 2), 16),
+    parseInt(full.slice(2, 4), 16),
+    parseInt(full.slice(4, 6), 16),
+  ];
 };
 
-const mix = (hex, target, t) => {
+const mix = (hex: string, target: [number, number, number], t: number) => {
   const [r, g, b] = hexToRgb(hex);
-  const m = (a, c) => Math.round(a + (c - a) * t);
+  const m = (a: number, c: number) => Math.round(a + (c - a) * t);
   return `rgb(${m(r, target[0])}, ${m(g, target[1])}, ${m(b, target[2])})`;
 };
 
-const alpha = (hex, a) => {
+const alpha = (hex: string, a: number) => {
   const [r, g, b] = hexToRgb(hex);
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 };
 
-const INITIAL_TITLE = 'Groceries for the week';
-
-const INITIAL_BODY =
-  '<h3>Market run — Saturday</h3>' +
-  '<p>Pickup slot booked for <b>09:15</b> at Fieldgate. Card at the door, no cash this time. If the queue is past the bakery, go round by the loading bay.</p>' +
-  '<ul>' +
-  '<li>Steel-cut oats — 1kg bag</li>' +
-  '<li>Coffee — Mariposa dark roast, 500g</li>' +
-  '<li>Olive oil — the green tin, not the bottle</li>' +
-  '<li>Lemons ×2, flat parsley, a head of garlic</li>' +
-  '</ul>' +
-  '<p>The <b>big box of oat milk</b> drops to offer price on Thursday night — order it before Friday or it sells out again like last month. Standing order lives at <a href="https://mariposa.coffee/subscribe">mariposa.coffee/subscribe</a>.</p>';
-
-const CREATED_AT = '24 Oct 2026, 08:12';
-const INITIAL_UPDATED = '26 Oct 2026, 14:32';
-
-const formatStamp = (d) =>
+const formatStamp = (d: Date) =>
   `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ` +
-  `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 
-const stripHtml = (html) =>
+const stripHtml = (html: string): string =>
   html
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<\/(p|div|li|h1|h2|h3|ul|ol)>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&');
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/(p|div|li|h1|h2|h3|ul|ol)>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .trim();
+
+type Status = "loading" | "idle" | "pending" | "saving" | "saved" | "error" | "loadError";
 
 export default function Screen() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlId = searchParams.get("id");
+
   const ink = mix(brand.neutralColor, WHITE, 0.72);
   const inkStrong = mix(brand.neutralColor, WHITE, 0.9);
   const muted = brand.neutralColor;
@@ -75,57 +82,117 @@ export default function Screen() {
   const headingFont = `${brand.fontHeading}, ui-sans-serif, system-ui, sans-serif`;
   const bodyFont = `${brand.fontBody}, Georgia, 'Times New Roman', serif`;
 
-  const bodyRef = React.useRef(null);
-  const retimer = React.useRef(null);
-  const linkBtnRef = React.useRef(null);
-  const deleteBtnRef = React.useRef(null);
-  const cancelRef = React.useRef(null);
-  const confirmRef = React.useRef(null);
-
-  const [title, setTitle] = React.useState(INITIAL_TITLE);
-  const [bodyHtml, setBodyHtml] = React.useState(INITIAL_BODY);
-  const [revision, setRevision] = React.useState(0);
-  const [status, setStatus] = React.useState('saved');
-  const [updatedAt, setUpdatedAt] = React.useState(INITIAL_UPDATED);
+  const [noteId, setNoteId] = React.useState<string | null>(urlId);
+  const [title, setTitle] = React.useState("");
+  const [status, setStatus] = React.useState<Status>(urlId ? "loading" : "idle");
+  const [loadError, setLoadError] = React.useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = React.useState<string | null>(null);
   const [saveCount, setSaveCount] = React.useState(0);
-  const [active, setActive] = React.useState({ bold: false, list: false, heading: false, link: false });
-  const [linkHint, setLinkHint] = React.useState('');
+  const [linkHint, setLinkHint] = React.useState("");
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
 
-  const plain = stripHtml(bodyHtml).trim();
-  const words = plain ? plain.split(/\s+/).length : 0;
-  const titleEmpty = title.trim().length === 0;
+  const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deleteBtnRef = React.useRef<HTMLButtonElement | null>(null);
+  const cancelRef = React.useRef<HTMLButtonElement | null>(null);
+  const confirmRef = React.useRef<HTMLButtonElement | null>(null);
+  const noteIdRef = React.useRef<string | null>(urlId);
+  const titleRef = React.useRef("");
 
   React.useEffect(() => {
-    if (bodyRef.current) bodyRef.current.innerHTML = INITIAL_BODY;
-  }, []);
+    noteIdRef.current = noteId;
+  }, [noteId]);
 
-  // Auto-save pipeline: edit -> pending -> saving -> saved (with new updated_at)
+  const editor = useEditor({
+    extensions: [StarterKit.configure({ link: false }), Link.configure({ openOnClick: false })],
+    content: "",
+    immediatelyRender: false,
+    onUpdate: () => scheduleSave(),
+  });
+
+  // `useEditor` can hand back a new Editor instance across renders before it
+  // settles; the load effect below must not re-run (and re-fetch) each time
+  // that happens, so it reaches the current editor through this ref instead
+  // of depending on it directly.
+  const editorRef = React.useRef(editor);
+  editorRef.current = editor;
+
+  // Loads the stored note's rich-text body via GET /notes/{id}. Nothing is
+  // rendered into the title or editor until this resolves, so a 401 (which
+  // apiFetch turns into a redirect to /login) never flashes note content.
   React.useEffect(() => {
-    if (revision === 0) return undefined;
-    if (titleEmpty && !plain) {
-      setStatus('empty');
-      return undefined;
-    }
-    if (titleEmpty) {
-      setStatus('needsTitle');
-      return undefined;
-    }
-    setStatus('pending');
-    const t1 = setTimeout(() => {
-      setStatus('saving');
-      retimer.current = setTimeout(() => {
-        setStatus('saved');
-        setUpdatedAt(formatStamp(new Date()));
-        setSaveCount((c) => c + 1);
-      }, 520);
-    }, 800);
+    if (!urlId) return;
+    let cancelled = false;
+    apiFetch<NoteOut>(`/notes/${urlId}`)
+      .then((note) => {
+        if (cancelled) return;
+        setTitle(note.title);
+        titleRef.current = note.title;
+        editorRef.current?.commands.setContent(note.body || "");
+        setUpdatedAt(note.updated_at);
+        setStatus("saved");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setStatus("loadError");
+        setLoadError("Couldn’t open this note. It may have been deleted.");
+      });
     return () => {
-      clearTimeout(t1);
-      clearTimeout(retimer.current);
+      cancelled = true;
     };
-  }, [revision, titleEmpty, plain]);
+  }, [urlId]);
+
+  const performSave = React.useCallback(async () => {
+    if (!editor) return;
+    const bodyHtml = editor.getHTML();
+    const plain = stripHtml(bodyHtml);
+    const currentTitle = titleRef.current.trim();
+    if (!currentTitle && !plain) {
+      setStatus("idle");
+      return;
+    }
+    setStatus("saving");
+    try {
+      const payload = { title: currentTitle, body: bodyHtml };
+      const id = noteIdRef.current;
+      const saved = id
+        ? await apiFetch<NoteOut>(`/notes/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(payload),
+          })
+        : await apiFetch<NoteOut>("/notes", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+      if (!id) {
+        setNoteId(saved.id);
+        setSearchParams({ id: saved.id }, { replace: true });
+      }
+      setUpdatedAt(saved.updated_at ?? new Date().toISOString());
+      setStatus("saved");
+      setSaveCount((c) => c + 1);
+    } catch {
+      setStatus("error");
+    }
+  }, [editor, setSearchParams]);
+
+  const scheduleSave = React.useCallback(() => {
+    setStatus("pending");
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      performSave();
+    }, 800);
+  }, [performSave]);
+
+  React.useEffect(
+    () => () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    },
+    [],
+  );
+
+  const plain = editor ? stripHtml(editor.getHTML()) : "";
+  const words = plain ? plain.split(/\s+/).filter(Boolean).length : 0;
 
   React.useEffect(() => {
     if (!deleteOpen) return undefined;
@@ -133,71 +200,26 @@ export default function Screen() {
     return () => clearTimeout(id);
   }, [deleteOpen]);
 
-  const syncActive = React.useCallback(() => {
-    try {
-      const sel = window.getSelection();
-      let heading = false;
-      let link = false;
-      if (sel && sel.anchorNode) {
-        let n = sel.anchorNode.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode;
-        while (n && n !== bodyRef.current) {
-          if (n.tagName === 'H3') heading = true;
-          if (n.tagName === 'A') link = true;
-          n = n.parentElement;
-        }
-      }
-      setActive({
-        bold: document.queryCommandState('bold'),
-        list: document.queryCommandState('insertUnorderedList'),
-        heading,
-        link,
-      });
-    } catch (e) {
-      /* selection not available */
-    }
-  }, []);
-
-  const pushBody = () => {
-    if (!bodyRef.current) return;
-    setBodyHtml(bodyRef.current.innerHTML);
-    setRevision((r) => r + 1);
-    syncActive();
-  };
-
-  const exec = (cmd, value) => {
-    if (!bodyRef.current) return;
-    bodyRef.current.focus();
-    try {
-      document.execCommand(cmd, false, value);
-    } catch (e) {
-      /* command unsupported */
-    }
-    pushBody();
-  };
-
-  // Link works straight from the selection: select the words, press Link.
   const toggleLink = () => {
-    if (active.link) {
-      setLinkHint('');
-      exec('unlink');
+    if (!editor) return;
+    if (editor.isActive("link")) {
+      editor.chain().focus().unsetLink().run();
+      setLinkHint("");
       return;
     }
-    let text = '';
-    try {
-      const sel = window.getSelection();
-      text = sel ? String(sel).trim() : '';
-    } catch (e) {
-      text = '';
-    }
+    const { from, to } = editor.state.selection;
+    const text = editor.state.doc.textBetween(from, to, " ").trim();
     if (!text) {
-      setLinkHint('Select the words you want to link in the body, then press Link again. Press Link inside an existing link to remove it.');
-      if (bodyRef.current) bodyRef.current.focus();
+      setLinkHint(
+        "Select the words you want to link in the body, then press Link again. Press Link inside an existing link to remove it.",
+      );
+      editor.commands.focus();
       return;
     }
-    const cleaned = text.replace(/^\/+/, '').replace(/\s+/g, '');
+    const cleaned = text.replace(/^\/+/, "").replace(/\s+/g, "");
     const url = /^https?:\/\//i.test(text) ? text : `https://${cleaned}`;
-    setLinkHint('');
-    exec('createLink', url);
+    setLinkHint("");
+    editor.chain().focus().setLink({ href: url }).run();
   };
 
   const closeDialog = () => {
@@ -206,17 +228,17 @@ export default function Screen() {
     if (deleteBtnRef.current) deleteBtnRef.current.focus();
   };
 
-  const onDialogKey = (e) => {
-    if (e.key === 'Escape') {
+  const onDialogKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
       e.stopPropagation();
       closeDialog();
       return;
     }
-    if (e.key === 'Tab') {
-      const nodes = [cancelRef.current, confirmRef.current].filter(Boolean);
+    if (e.key === "Tab") {
+      const nodes = [cancelRef.current, confirmRef.current].filter(Boolean) as HTMLButtonElement[];
       if (nodes.length === 0) return;
       e.preventDefault();
-      const i = nodes.indexOf(document.activeElement);
+      const i = nodes.indexOf(document.activeElement as HTMLButtonElement);
       const next = e.shiftKey
         ? nodes[(i - 1 + nodes.length) % nodes.length]
         : nodes[(i + 1) % nodes.length];
@@ -224,37 +246,69 @@ export default function Screen() {
     }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     setDeleting(true);
-    retimer.current = setTimeout(() => navigate('notes'), 650);
+    const id = noteIdRef.current;
+    try {
+      if (id) await apiFetch<void>(`/notes/${id}`, { method: "DELETE" });
+      navigate("/notes");
+    } catch {
+      setDeleting(false);
+    }
   };
 
-  React.useEffect(() => () => clearTimeout(retimer.current), []);
-
-  const STATUS = {
-    saved: { text: `Saved — last updated ${updatedAt}`, Icon: Icons.Check, color: primaryLift, dot: primary },
-    pending: { text: 'Edited just now — saving in a moment', Icon: Icons.Clock, color: muted, dot: muted },
-    saving: { text: 'Saving your changes…', Icon: Icons.Clock, color: muted, dot: primary },
-    needsTitle: { text: 'Not saved — this note needs a title', Icon: Icons.AlertCircle, color: accentText, dot: brand.accentColor },
-    empty: { text: 'Nothing saved yet — start with a title', Icon: Icons.FileText, color: muted, dot: muted },
+  const STATUS: Record<
+    Exclude<Status, "loading" | "loadError">,
+    { text: string; Icon: typeof Icons.Check; color: string; dot: string }
+  > = {
+    idle: {
+      text: "Nothing saved yet — start with a title or a few words",
+      Icon: Icons.FileText,
+      color: muted,
+      dot: muted,
+    },
+    saved: {
+      text: updatedAt ? `Saved — last updated ${formatStamp(new Date(updatedAt))}` : "Saved",
+      Icon: Icons.Check,
+      color: primaryLift,
+      dot: primary,
+    },
+    pending: {
+      text: "Edited just now — saving in a moment",
+      Icon: Icons.Clock,
+      color: muted,
+      dot: muted,
+    },
+    saving: { text: "Saving your changes…", Icon: Icons.Clock, color: muted, dot: primary },
+    error: {
+      text: "Couldn’t save just now — your words are still here, try again",
+      Icon: Icons.AlertCircle,
+      color: accentText,
+      dot: brand.accentColor,
+    },
   };
-  const st = STATUS[status];
 
-  const toolButton = (id, label, isActive, onClick, ref) => (
+  const st = status === "loading" || status === "loadError" ? STATUS.idle : STATUS[status];
+
+  const toolButton = (
+    id: string,
+    label: string,
+    isActive: boolean | null,
+    onClick: () => void,
+  ) => (
     <button
       key={id}
-      ref={ref}
       type="button"
-      data-wf={id}
       aria-pressed={isActive === null ? undefined : isActive}
       onClick={onClick}
+      disabled={status === "loading"}
       className="qd-ring h-11 w-full text-[13px] tracking-wide transition-colors duration-150"
       style={{
         fontFamily: headingFont,
         fontWeight: 600,
         borderRadius: brand.radius,
         border: `1px solid ${isActive ? alpha(primary, 0.55) : hair}`,
-        backgroundColor: isActive ? alpha(primary, 0.16) : 'transparent',
+        backgroundColor: isActive ? alpha(primary, 0.16) : "transparent",
         color: isActive ? primaryLift : ink,
       }}
     >
@@ -264,45 +318,45 @@ export default function Screen() {
 
   const css = `
     .qd-ring:focus-visible { outline: 2px solid ${primary}; outline-offset: 2px; }
-    .qd-body:focus { outline: none; }
-    .qd-body:focus-visible { outline: 2px solid ${primary}; outline-offset: 8px; border-radius: 2px; }
-    .qd-body h3 { font-family: ${headingFont}; font-weight: 600; font-size: 1.125rem; line-height: 1.4; color: ${inkStrong}; margin: 24px 0 8px; }
-    .qd-body h3:first-child { margin-top: 0; }
-    .qd-body p { margin: 0 0 16px; }
-    .qd-body ul { list-style: disc; padding-left: 24px; margin: 0 0 16px; }
-    .qd-body ol { list-style: decimal; padding-left: 24px; margin: 0 0 16px; }
-    .qd-body li { margin: 4px 0; }
-    .qd-body b, .qd-body strong { font-weight: 700; color: ${inkStrong}; }
-    .qd-body a { color: ${primaryLift}; text-decoration: underline; text-underline-offset: 3px; }
+    .ProseMirror:focus { outline: none; }
+    .ProseMirror h3 { font-family: ${headingFont}; font-weight: 600; font-size: 1.125rem; line-height: 1.4; color: ${inkStrong}; margin: 24px 0 8px; }
+    .ProseMirror h3:first-child { margin-top: 0; }
+    .ProseMirror p { margin: 0 0 16px; }
+    .ProseMirror ul { list-style: disc; padding-left: 24px; margin: 0 0 16px; }
+    .ProseMirror ol { list-style: decimal; padding-left: 24px; margin: 0 0 16px; }
+    .ProseMirror li { margin: 4px 0; }
+    .ProseMirror strong { font-weight: 700; color: ${inkStrong}; }
+    .ProseMirror a { color: ${primaryLift}; text-decoration: underline; text-underline-offset: 3px; }
+    .ProseMirror p.is-editor-empty:first-child::before {
+      content: attr(data-placeholder);
+      color: ${alpha(brand.neutralColor, 0.55)};
+      float: left;
+      height: 0;
+      pointer-events: none;
+    }
     .qd-input::placeholder { color: ${alpha(brand.neutralColor, 0.6)}; }
-    @keyframes qd-rise { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
-    @keyframes qd-fade { from { opacity: 0 } to { opacity: 1 } }
-    @keyframes qd-breathe { 0%, 100% { opacity: .35 } 50% { opacity: 1 } }
-    .qd-rise { animation: qd-rise .2s ease-out both; }
-    .qd-fade { animation: qd-fade .18s ease-out both; }
-    .qd-breathe { animation: qd-breathe 1.1s ease-in-out infinite; }
     @media (prefers-reduced-motion: reduce) {
-      .qd-rise, .qd-fade, .qd-breathe { animation: none !important; }
       * { transition-duration: 0.01ms !important; }
     }
   `;
 
   return (
-    <div className="min-h-full w-full" style={{ backgroundColor: brand.backgroundColor, color: ink, fontFamily: bodyFont }}>
+    <div
+      className="min-h-full w-full"
+      style={{ backgroundColor: brand.backgroundColor, color: ink, fontFamily: bodyFont }}
+    >
       <style>{css}</style>
 
       <div className="mx-auto w-full max-w-[960px] px-4 py-6 sm:px-8 sm:py-10">
-        {/* Row 1 — back, save status, delete */}
         <div className="grid grid-cols-12 items-center gap-4">
           <div className="col-span-12 sm:col-span-3">
             <Button
               type="button"
-              data-wf="b-0-0"
-              onClick={() => navigate('notes')}
+              onClick={() => navigate("/notes")}
               className="qd-ring inline-flex h-11 items-center gap-2 px-0 text-[14px] transition-colors duration-150"
               style={{
-                backgroundColor: 'transparent',
-                border: 'none',
+                backgroundColor: "transparent",
+                border: "none",
                 color: ink,
                 fontFamily: headingFont,
                 fontWeight: 600,
@@ -314,37 +368,50 @@ export default function Screen() {
           </div>
 
           <div className="col-span-12 sm:col-span-6 sm:flex sm:justify-center">
-            <p
-              data-wf="b-0-1"
-              aria-live="polite"
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-[13px]"
-              style={{
-                borderRadius: '999px',
-                border: `1px solid ${hair}`,
-                backgroundColor: surface,
-                color: st.color,
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              <span
-                aria-hidden="true"
-                className={status === 'saving' ? 'qd-breathe inline-block h-1.5 w-1.5 rounded-full' : 'inline-block h-1.5 w-1.5 rounded-full'}
-                style={{ backgroundColor: st.dot }}
-              />
-              <st.Icon className="h-3.5 w-3.5" aria-hidden="true" />
-              {st.text}
-            </p>
+            {status === "loading" ? (
+              <p
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-[13px]"
+                style={{
+                  borderRadius: "999px",
+                  border: `1px solid ${hair}`,
+                  backgroundColor: surface,
+                  color: muted,
+                }}
+              >
+                Loading note…
+              </p>
+            ) : (
+              <p
+                aria-live="polite"
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-[13px]"
+                style={{
+                  borderRadius: "999px",
+                  border: `1px solid ${hair}`,
+                  backgroundColor: surface,
+                  color: st.color,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: st.dot }}
+                />
+                <st.Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                {st.text}
+              </p>
+            )}
           </div>
 
           <div className="col-span-12 flex sm:col-span-3 sm:justify-end">
-            <Button
+            <button
               type="button"
               ref={deleteBtnRef}
-              data-wf="b-0-2"
               onClick={() => setDeleteOpen(true)}
-              className="qd-ring inline-flex h-11 items-center gap-2 px-4 text-[14px] transition-colors duration-150"
+              disabled={status === "loading"}
+              className="qd-ring inline-flex h-11 items-center gap-2 px-4 text-[14px] transition-colors duration-150 disabled:opacity-50"
               style={{
-                backgroundColor: 'transparent',
+                backgroundColor: "transparent",
                 border: `1px solid ${alpha(brand.accentColor, 0.45)}`,
                 borderRadius: brand.radius,
                 color: accentText,
@@ -354,61 +421,72 @@ export default function Screen() {
             >
               <Icons.Trash className="h-4 w-4" aria-hidden="true" />
               Delete
-            </Button>
+            </button>
           </div>
         </div>
 
-        <h1
-          className="mt-8 text-[11px] uppercase"
-          style={{ fontFamily: headingFont, fontWeight: 600, letterSpacing: '0.2em', color: muted }}
-        >
-          Note · created {CREATED_AT}
-        </h1>
+        {loadError ? (
+          <p
+            role="alert"
+            className="mt-6 flex items-start gap-2 px-4 py-3 text-[14px]"
+            style={{
+              color: accentText,
+              backgroundColor: alpha(brand.accentColor, 0.12),
+              border: `1px solid ${alpha(brand.accentColor, 0.5)}`,
+              borderRadius: brand.radius,
+            }}
+          >
+            <Icons.AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            {loadError}
+          </p>
+        ) : null}
 
-        {/* The sheet */}
         <div
           className="mt-3"
-          style={{ border: `1px solid ${hair}`, borderRadius: brand.radius, backgroundColor: surface }}
+          style={{
+            border: `1px solid ${hair}`,
+            borderRadius: brand.radius,
+            backgroundColor: surface,
+          }}
         >
-          {/* Row 2 — title field */}
           <div className="px-4 pt-6 sm:px-10">
             <Label
               htmlFor="note-title"
               className="block text-[11px] uppercase"
-              style={{ fontFamily: headingFont, fontWeight: 600, letterSpacing: '0.18em', color: muted }}
+              style={{
+                fontFamily: headingFont,
+                fontWeight: 600,
+                letterSpacing: "0.18em",
+                color: muted,
+              }}
             >
               Title
             </Label>
             <Input
               id="note-title"
-              data-wf="b-1-0"
               value={title}
-              onChange={(e) => { setTitle(e.target.value); setRevision((r) => r + 1); }}
+              disabled={status === "loading"}
+              onChange={(e) => {
+                titleRef.current = e.target.value;
+                setTitle(e.target.value);
+                scheduleSave();
+              }}
               placeholder="Name this note"
-              aria-invalid={status === 'needsTitle'}
-              aria-describedby={status === 'needsTitle' ? 'title-error' : undefined}
               className="qd-input qd-ring mt-2 w-full px-0 text-[26px] leading-tight sm:text-[30px]"
               style={{
                 fontFamily: headingFont,
                 fontWeight: 600,
                 color: inkStrong,
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderBottom: `1px solid ${status === 'needsTitle' ? alpha(brand.accentColor, 0.6) : hairSoft}`,
+                backgroundColor: "transparent",
+                border: "none",
+                borderBottom: `1px solid ${hairSoft}`,
                 borderRadius: 0,
-                height: 'auto',
-                paddingBottom: '12px',
+                height: "auto",
+                paddingBottom: "12px",
               }}
             />
-            {status === 'needsTitle' && (
-              <p id="title-error" className="qd-fade mt-2 flex items-start gap-2 text-[13px]" style={{ color: accentText }}>
-                <Icons.AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                A note needs a title before it can be saved. Everything you have typed is still here — add a few words above and it saves itself.
-              </p>
-            )}
           </div>
 
-          {/* ruled margin: the Quiet Desk signature */}
           <div className="relative px-4 pb-6 pt-5 sm:px-10">
             <span
               aria-hidden="true"
@@ -417,58 +495,58 @@ export default function Screen() {
             />
 
             <div className="sm:pl-8">
-              {/* Row 3 — formatting toolbar */}
-              <div role="group" aria-label="Formatting" className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-                {toolButton('b-2-0', 'Bold', active.bold, () => exec('bold'))}
-                {toolButton('b-2-1', 'Heading', active.heading, () => exec('formatBlock', active.heading ? '<p>' : '<h3>'))}
-                {toolButton('b-2-2', 'List', active.list, () => exec('insertUnorderedList'))}
-                {toolButton('b-2-3', 'Link', active.link, toggleLink, linkBtnRef)}
+              <div
+                role="group"
+                aria-label="Formatting"
+                className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3"
+              >
+                {toolButton("bold", "Bold", editor?.isActive("bold") ?? false, () =>
+                  editor?.chain().focus().toggleBold().run(),
+                )}
+                {toolButton(
+                  "heading",
+                  "Heading",
+                  editor?.isActive("heading", { level: 3 }) ?? false,
+                  () => editor?.chain().focus().toggleHeading({ level: 3 }).run(),
+                )}
+                {toolButton("list", "List", editor?.isActive("bulletList") ?? false, () =>
+                  editor?.chain().focus().toggleBulletList().run(),
+                )}
+                {toolButton("link", "Link", editor?.isActive("link") ?? false, toggleLink)}
               </div>
 
               <p
                 aria-live="polite"
-                className={linkHint ? 'qd-fade mt-3 flex items-start gap-2 text-[13px]' : 'sr-only'}
+                className={linkHint ? "mt-3 flex items-start gap-2 text-[13px]" : "sr-only"}
                 style={linkHint ? { color: accentText } : undefined}
               >
-                {linkHint && <Icons.AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />}
+                {linkHint && (
+                  <Icons.AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                )}
                 {linkHint}
               </p>
 
-              {/* Row 4 — rich-text body */}
               <div className="mt-6">
                 <span
                   id="body-label"
                   className="block text-[11px] uppercase"
-                  style={{ fontFamily: headingFont, fontWeight: 600, letterSpacing: '0.18em', color: muted }}
+                  style={{
+                    fontFamily: headingFont,
+                    fontWeight: 600,
+                    letterSpacing: "0.18em",
+                    color: muted,
+                  }}
                 >
                   Body
                 </span>
-                <div className="relative mt-3">
-                  {!plain && (
-                    <p
-                      aria-hidden="true"
-                      className="pointer-events-none absolute left-0 top-0 text-[17px] leading-[1.65]"
-                      style={{ color: alpha(brand.neutralColor, 0.55) }}
-                    >
-                      Start typing. Use Bold, Heading, List or Link above to shape it — text only, no attachments.
-                    </p>
-                  )}
-                  <div
-                    ref={bodyRef}
-                    data-wf="b-3-0"
-                    className="qd-body text-[17px] leading-[1.65]"
-                    style={{ color: ink, minHeight: '340px', maxWidth: '68ch', fontFamily: bodyFont }}
-                    contentEditable
-                    suppressContentEditableWarning
-                    role="textbox"
-                    aria-multiline="true"
-                    aria-labelledby="body-label"
-                    tabIndex={0}
-                    onInput={pushBody}
-                    onKeyUp={syncActive}
-                    onMouseUp={syncActive}
-                    onFocus={syncActive}
-                  />
+                <div
+                  className="mt-3 text-[17px] leading-[1.65]"
+                  style={{ color: ink, minHeight: "340px", maxWidth: "68ch", fontFamily: bodyFont }}
+                  aria-labelledby="body-label"
+                  role="textbox"
+                  aria-multiline="true"
+                >
+                  <EditorContent editor={editor} />
                 </div>
               </div>
             </div>
@@ -478,14 +556,20 @@ export default function Screen() {
             <Separator />
           </div>
 
-          {/* Row 5 — autosave helper */}
           <div className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-10">
-            <p data-wf="b-4-0" className="text-[13px]" style={{ color: muted }}>
-              Changes save automatically as you type. No attachments and no version history — once a note is deleted it is gone.
+            <p className="text-[13px]" style={{ color: muted }}>
+              Changes save automatically as you type. No attachments and no version history — once a
+              note is deleted it is gone.
             </p>
             <p
               className="text-[12px] uppercase"
-              style={{ fontFamily: headingFont, fontWeight: 600, letterSpacing: '0.14em', color: muted, fontVariantNumeric: 'tabular-nums' }}
+              style={{
+                fontFamily: headingFont,
+                fontWeight: 600,
+                letterSpacing: "0.14em",
+                color: muted,
+                fontVariantNumeric: "tabular-nums",
+              }}
             >
               {words} words · {saveCount} autosaves this session
             </p>
@@ -493,26 +577,26 @@ export default function Screen() {
         </div>
       </div>
 
-      {/* Row 6 + 7 — delete confirmation */}
       {deleteOpen && (
         <div
-          className="qd-fade fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
           style={{ backgroundColor: alpha(brand.backgroundColor, 0.82) }}
-          onMouseDown={(e) => { if (e.target === e.currentTarget && !deleting) closeDialog(); }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !deleting) closeDialog();
+          }}
         >
           <div
-            data-wf="b-5-0"
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-title"
             aria-describedby="delete-desc"
             onKeyDown={onDialogKey}
-            className="qd-rise w-full max-w-[480px] p-6"
+            className="w-full max-w-[480px] p-6"
             style={{
               backgroundColor: surfaceLift,
               border: `1px solid ${hair}`,
               borderRadius: brand.radius,
-              boxShadow: '0 28px 70px rgba(0, 0, 0, 0.55)',
+              boxShadow: "0 28px 70px rgba(0, 0, 0, 0.55)",
             }}
           >
             <h2
@@ -520,25 +604,22 @@ export default function Screen() {
               className="text-[20px] leading-snug"
               style={{ fontFamily: headingFont, fontWeight: 600, color: inkStrong }}
             >
-              Delete “{title.trim() || 'Untitled note'}”?
+              Delete “{title.trim() || "Untitled note"}”?
             </h2>
             <p id="delete-desc" className="mt-3 text-[15px] leading-[1.6]" style={{ color: ink }}>
-              It is removed permanently and cannot be recovered. This app keeps no version history and no trash.
-            </p>
-            <p className="mt-2 text-[13px]" style={{ color: muted, fontVariantNumeric: 'tabular-nums' }}>
-              Last updated {updatedAt} · {words} words
+              It is removed permanently and cannot be recovered. This app keeps no version history
+              and no trash.
             </p>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <Button
+              <button
                 type="button"
                 ref={cancelRef}
-                data-wf="b-6-0"
                 disabled={deleting}
                 onClick={closeDialog}
                 className="qd-ring h-11 w-full text-[14px] transition-colors duration-150"
                 style={{
-                  backgroundColor: 'transparent',
+                  backgroundColor: "transparent",
                   border: `1px solid ${hair}`,
                   borderRadius: brand.radius,
                   color: deleting ? muted : ink,
@@ -548,11 +629,10 @@ export default function Screen() {
                 }}
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
                 ref={confirmRef}
-                data-wf="b-6-1"
                 disabled={deleting}
                 onClick={confirmDelete}
                 className="qd-ring inline-flex h-11 w-full items-center justify-center gap-2 text-[14px] transition-colors duration-150"
@@ -560,7 +640,7 @@ export default function Screen() {
                   backgroundColor: accentSolid,
                   border: `1px solid ${accentSolid}`,
                   borderRadius: brand.radius,
-                  color: '#ffffff',
+                  color: "#ffffff",
                   fontFamily: headingFont,
                   fontWeight: 600,
                   opacity: deleting ? 0.85 : 1,
@@ -568,7 +648,7 @@ export default function Screen() {
               >
                 {deleting ? (
                   <>
-                    <Icons.Clock className="qd-breathe h-4 w-4" aria-hidden="true" />
+                    <Icons.Clock className="h-4 w-4" aria-hidden="true" />
                     Deleting…
                   </>
                 ) : (
@@ -577,7 +657,7 @@ export default function Screen() {
                     Delete note
                   </>
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         </div>
