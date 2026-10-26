@@ -1,10 +1,13 @@
 """Pydantic request and response models.
 
-One pair per entity in the approved data model, plus the placeholder every
-generated route returns until it has been implemented.
+One pair per entity the approved API spec declares, plus the placeholder
+every generated route still returns until it has been implemented.
 """
 
-from pydantic import BaseModel
+from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
 
 
 class StubResponse(BaseModel):
@@ -18,3 +21,43 @@ class StubResponse(BaseModel):
     endpoint: str
     status: str = "not_implemented"
     detail: str = "Scaffolded from the approved API spec; no behaviour yet."
+
+
+class LoginRequest(BaseModel):
+    """Body of `POST /auth/login`."""
+
+    email: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    """Success body of `POST /auth/login`."""
+
+    access_token: str
+    token_type: str = "bearer"
+
+
+class NoteCreate(BaseModel):
+    """Body of `POST /notes`."""
+
+    title: str
+    body: str
+
+
+class NoteUpdate(BaseModel):
+    """Body of `PUT /notes/{id}`: auto-save sends whichever field changed."""
+
+    title: str | None = None
+    body: str | None = None
+
+
+class NoteOut(BaseModel):
+    """Response body shared by every endpoint that returns a note."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    title: str | None = None
+    body: str | None = None
+    created_at: datetime
+    updated_at: datetime

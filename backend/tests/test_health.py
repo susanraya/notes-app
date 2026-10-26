@@ -27,4 +27,9 @@ def test_the_openapi_document_builds() -> None:
     response = client.get("/openapi.json")
 
     assert response.status_code == 200
-    assert "/health" in response.json()["paths"]
+    paths = response.json()["paths"]
+    assert "/health" in paths
+    # The stub routers in app/routers/ reserve every path the approved API
+    # spec declares; this only checks they registered, not what they do.
+    for path in ("/auth/login", "/auth/logout", "/notes", "/notes/{note_id}"):
+        assert path in paths

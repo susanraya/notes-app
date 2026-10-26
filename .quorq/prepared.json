@@ -1,0 +1,52 @@
+{
+  "architecture_npm": [
+    "@tiptap/extension-link",
+    "@tiptap/react",
+    "@tiptap/starter-kit"
+  ],
+  "key": {
+    "app_design_id": "fa5d3658-5b9c-4373-97fc-8de1612bc1ed",
+    "app_design_version": 1,
+    "architecture_document_id": "9d94d730-f78d-49e6-9162-49a889526f8c",
+    "architecture_version": 1
+  },
+  "outcome": "prepared",
+  "packages": [
+    {
+      "ecosystem": "npm",
+      "installed_version": "3.32.0",
+      "name": "@tiptap/react",
+      "status": "installed",
+      "version": ""
+    },
+    {
+      "ecosystem": "npm",
+      "installed_version": "3.32.0",
+      "name": "@tiptap/starter-kit",
+      "status": "installed",
+      "version": ""
+    },
+    {
+      "ecosystem": "npm",
+      "installed_version": "3.32.0",
+      "name": "@tiptap/extension-link",
+      "status": "installed",
+      "version": ""
+    },
+    {
+      "ecosystem": "pypi",
+      "installed_version": "1.7.4",
+      "name": "passlib[bcrypt]",
+      "status": "installed",
+      "version": ">=1.7.4"
+    },
+    {
+      "ecosystem": "pypi",
+      "installed_version": "2.15.1",
+      "name": "PyJWT",
+      "status": "installed",
+      "version": ">=2.8.0"
+    }
+  ],
+  "prepared_by_run": "7dce8f0c-33d7-48a7-9530-1c38c0c88793"
+}
