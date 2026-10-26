@@ -23,16 +23,16 @@ def _parse_note_id(note_id: str) -> uuid.UUID:
     try:
         return uuid.UUID(note_id)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found") from None
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Note not found"
+        ) from None
 
 
 @router.get("", response_model=list[NoteOut])
 async def list_notes(
-    q: str | None = None,
     owner: str = Depends(get_current_owner),  # noqa: B008
     db: Session = Depends(get_db),  # noqa: B008
 ) -> list[NoteOut]:
-    del q  # full-text filtering is a later story; accepted only to shape the query param
     notes = notes_service.list_notes(db, owner)
     return [NoteOut.model_validate(note) for note in notes]
 

@@ -9,11 +9,6 @@
 // fallback is the local backend so a bare `npm run dev` still points somewhere real.
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
-// Retained for compatibility with any build that still bakes a shared bearer in; apiFetch
-// no longer sends it, since authenticated calls now carry the session JWT issued by
-// POST /auth/login instead.
-export const API_SECRET_KEY: string = import.meta.env.VITE_API_SECRET_KEY ?? "";
-
 const TOKEN_STORAGE_KEY = "qd_notes_token";
 
 export function getToken(): string | null {

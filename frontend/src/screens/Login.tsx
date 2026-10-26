@@ -6,7 +6,7 @@ import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
 import { LoginError, login } from "@/lib/auth";
 
-const { Button, Card, Input, Label, Checkbox } = UI;
+const { Button, Card, Input, Label } = UI;
 
 type Status = "idle" | "checking" | "error" | "success";
 type FieldErrors = { email: string | null; password: string | null };
@@ -85,7 +85,6 @@ export default function Screen() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [reveal, setReveal] = React.useState(false);
-  const [keepSignedIn, setKeepSignedIn] = React.useState(true);
   const [status, setStatus] = React.useState<Status>("idle");
   const [formError, setFormError] = React.useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({
@@ -297,8 +296,8 @@ export default function Screen() {
                   Log in to Notes
                 </h1>
                 <p className="mt-2 max-w-[48ch] text-[15px] leading-[1.6]" style={{ color: MUTED }}>
-                  This app holds exactly one account. There’s no sign-up to follow — the
-                  credentials were set when the desk was built.
+                  This app holds exactly one account. There’s no sign-up to follow — the credentials
+                  were set when the desk was built.
                 </p>
 
                 <div className="my-6" style={{ borderTop: `1px solid ${HAIR}` }} />
@@ -406,9 +405,7 @@ export default function Screen() {
                             setFieldErrors((f) => ({ ...f, password: null }));
                         }}
                         aria-invalid={fieldErrors.password ? "true" : "false"}
-                        aria-describedby={
-                          fieldErrors.password ? "login-password-error" : undefined
-                        }
+                        aria-describedby={fieldErrors.password ? "login-password-error" : undefined}
                         className="qd-field h-11 w-full px-3 text-[15px]"
                         style={fieldStyle(Boolean(fieldErrors.password))}
                       />
@@ -422,22 +419,6 @@ export default function Screen() {
                           {fieldErrors.password}
                         </p>
                       )}
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-1">
-                      <Checkbox
-                        id="login-keep"
-                        checked={keepSignedIn}
-                        disabled={busy}
-                        onChange={(e) => setKeepSignedIn(e.target.checked)}
-                      />
-                      <Label
-                        htmlFor="login-keep"
-                        className="text-[14px] leading-tight"
-                        style={{ color: MUTED }}
-                      >
-                        Keep me signed in on this device
-                      </Label>
                     </div>
 
                     <Button
