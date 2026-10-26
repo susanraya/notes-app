@@ -1,26 +1,42 @@
 """Authentication endpoints (architecture component: backend / Notes API).
 
-Stub routes, same placeholder convention as every other generated route (see
-`app/main.py`): each reserves the path, method and request shape the
-approved API spec declares, and returns a typed `StubResponse` rather than
-failing, so the OpenAPI document is complete before a line of business logic
-exists. Checking the password hash, issuing a JWT and validating it on every
-`/notes` call (US-001, US-002) is the development sprint's work.
+Single-owner login: checks the submitted password against the one seeded
+`users` row's bcrypt hash and, on success, issues a JWT the owner then sends
+as `Authorization: Bearer <token>` on every other request. Logout is
+stateless (see `docs/sdlc/architecture/api/openapi.yaml`): it only confirms
+the caller is authenticated before the frontend discards its token.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
-from app.schemas import LoginRequest, StubResponse
+from app.database import get_db
+from app.dependencies import get_current_owner
+from app.models import User
+from app.schemas import LoginRequest, TokenResponse
+from app.security import create_access_token, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-
-@router.post("/login", response_model=StubResponse)
-async def login(credentials: LoginRequest) -> StubResponse:
-    del credentials  # unused in the stub; accepted only to shape the OpenAPI body
-    return StubResponse(endpoint="POST /auth/login")
+# Deliberately generic (AC-002): never reveals whether the email or the
+# password was the part that was wrong.
+_INVALID_CREDENTIALS_DETAIL = "Credentials not accepted"
 
 
-@router.post("/logout", response_model=StubResponse)
-async def logout() -> StubResponse:
-    return StubResponse(endpoint="POST /auth/logout")
+@router.post("/login", response_model=TokenResponse)
+async def login(
+    credentials: LoginRequest, db: Session = Depends(get_db)  # noqa: B008
+) -> TokenResponse:
+    user = db.query(User).filter(User.email == credentials.email).first()
+    if user is None or not verify_password(credentials.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=_INVALID_CREDENTIALS_DETAIL
+        )
+    token = create_access_token(subject=user.email)
+    return TokenResponse(access_token=token)
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(owner: str = Depends(get_current_owner)) -> None:  # noqa: B008
+    del owner  # the dependency's only job here is to require a valid session
+    return None

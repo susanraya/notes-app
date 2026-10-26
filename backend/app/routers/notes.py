@@ -2,16 +2,18 @@
 
 Stub routes, same placeholder convention as `app/routers/auth.py`: each
 reserves the path, method and request/response shape the approved API spec
-declares. Persistence, JWT enforcement, newest-first ordering and the
-full-text search over title and body (US-003 through US-010) are the
-development sprint's work -- nothing here touches the database.
+declares. Persistence, newest-first ordering and the full-text search over
+title and body (US-003 through US-010) are the development sprint's work.
+Every route here is guarded by `get_current_owner` (US-001, NFR-002): an
+unauthenticated request never reaches a handler body.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.dependencies import get_current_owner
 from app.schemas import NoteCreate, NoteUpdate, StubResponse
 
-router = APIRouter(prefix="/notes", tags=["notes"])
+router = APIRouter(prefix="/notes", tags=["notes"], dependencies=[Depends(get_current_owner)])
 
 
 @router.get("", response_model=StubResponse)

@@ -1,32 +1,35 @@
-// @ts-nocheck -- generated from the approved design under its JS runtime contract; not hand-written TypeScript.
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import React from "react";
+import * as React from "react";
 
 import * as UI from "@/lib/ui";
 import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
+import { LoginError, login } from "@/lib/auth";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { Button, Card, Input, Label, Checkbox } = UI;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const { Search } = Icons;
 
-const OWNER_EMAIL = 'susan.raya@quorq.ai';
-const OWNER_PASSWORD = 'quietdesk';
+type Status = "idle" | "checking" | "error" | "success";
+type FieldErrors = { email: string | null; password: string | null };
 
-const toRgb = (hex) => {
-  const h = String(hex).replace('#', '');
-  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
-  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+const toRgb = (hex: string): [number, number, number] => {
+  const h = String(hex).replace("#", "");
+  const full =
+    h.length === 3
+      ? h
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : h;
+  const [a, b, c] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+  return [a, b, c];
 };
-const alpha = (hex, a) => {
+const alpha = (hex: string, a: number) => {
   const [r, g, b] = toRgb(hex);
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 };
-const lighten = (hex, amt) => {
+const lighten = (hex: string, amt: number) => {
   const [r, g, b] = toRgb(hex);
-  const m = (c) => Math.round(c + (255 - c) * amt);
+  const m = (c: number) => Math.round(c + (255 - c) * amt);
   return `rgb(${m(r)}, ${m(g)}, ${m(b)})`;
 };
 
@@ -43,10 +46,13 @@ const HEAD_FONT = `${brand.fontHeading}, 'Public Sans', system-ui, sans-serif`;
 const BODY_FONT = `${brand.fontBody}, 'Source Serif 4', Georgia, serif`;
 
 const FACTS = [
-  { Icon: Icons.Clock, text: 'Auto-saves while you type, and stamps the time of the last save.' },
-  { Icon: Icons.Search, text: 'Search reads every title and every body — not just the headings.' },
-  { Icon: Icons.FileText, text: 'Notes stay in this app’s own store. Nothing is synced anywhere else.' },
-  { Icon: Icons.CheckCircle, text: 'Free to use. No plans, no billing, no upgrade nudge — ever.' },
+  { Icon: Icons.Clock, text: "Auto-saves while you type, and stamps the time of the last save." },
+  { Icon: Icons.Search, text: "Search reads every title and every body — not just the headings." },
+  {
+    Icon: Icons.FileText,
+    text: "Notes stay in this app’s own store. Nothing is synced anywhere else.",
+  },
+  { Icon: Icons.CheckCircle, text: "Free to use. No plans, no billing, no upgrade nudge — ever." },
 ];
 
 const STYLES = `
@@ -76,89 +82,64 @@ const STYLES = `
 
 export default function Screen() {
   const navigate = useNavigate();
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const [reveal, setReveal] = React.useState(false);
   const [keepSignedIn, setKeepSignedIn] = React.useState(true);
-  const [status, setStatus] = React.useState('idle'); // idle | checking | error | success
-  const [formError, setFormError] = React.useState(null);
-  const [fieldErrors, setFieldErrors] = React.useState({ email: null, password: null });
-  const [misses, setMisses] = React.useState(0);
-  const [cooldown, setCooldown] = React.useState(0);
+  const [status, setStatus] = React.useState<Status>("idle");
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({
+    email: null,
+    password: null,
+  });
   const [noticeOpen, setNoticeOpen] = React.useState(true);
 
-  const emailRef = React.useRef(null);
-  const passwordRef = React.useRef(null);
-  const timers = React.useRef([]);
+  const busy = status === "checking" || status === "success";
 
-  React.useEffect(() => () => timers.current.forEach(clearTimeout), []);
-
-  React.useEffect(() => {
-    if (cooldown <= 0) return undefined;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
-
-  const later = (fn, ms) => {
-    const id = setTimeout(fn, ms);
-    timers.current.push(id);
+  // The UI kit's `Input` isn't ref-forwarding, so a field is focused by id
+  // rather than through a React ref.
+  const focusField = (id: "login-email" | "login-password") => {
+    document.getElementById(id)?.focus();
   };
 
-  const locked = cooldown > 0;
-  const busy = status === 'checking' || status === 'success';
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (busy || locked) return;
+    if (busy) return;
 
-    const nextErrors = { email: null, password: null };
+    const nextErrors: FieldErrors = { email: null, password: null };
     const trimmed = email.trim();
-    if (!trimmed) nextErrors.email = 'Enter the email this desk was set up with.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) nextErrors.email = 'That isn’t a complete email address yet.';
-    if (!password) nextErrors.password = 'Enter your password to unlock the drawer.';
+    if (!trimmed) nextErrors.email = "Enter the email this desk was set up with.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed))
+      nextErrors.email = "That isn’t a complete email address yet.";
+    if (!password) nextErrors.password = "Enter your password to unlock the drawer.";
 
     if (nextErrors.email || nextErrors.password) {
       setFieldErrors(nextErrors);
       setFormError(null);
-      setStatus('error');
-      (nextErrors.email ? emailRef : passwordRef).current?.focus();
+      focusField(nextErrors.email ? "login-email" : "login-password");
       return;
     }
 
     setFieldErrors({ email: null, password: null });
     setFormError(null);
-    setStatus('checking');
+    setStatus("checking");
 
-    later(() => {
-      const ok = trimmed.toLowerCase() === OWNER_EMAIL && password === OWNER_PASSWORD;
-      if (ok) {
-        setStatus('success');
-        later(() => navigate('notes'), 850);
-        return;
-      }
-      const next = misses + 1;
-      setMisses(next);
-      setStatus('error');
-      if (next >= 3) {
-        setCooldown(30);
-        setFormError('Three misses in a row. The desk pauses for half a minute — your email and password are still here.');
-      } else {
-        setFormError('That email and password don’t match this desk’s account. Nothing was cleared — try the password again.');
-      }
-      passwordRef.current?.focus();
-    }, 900);
+    try {
+      await login(trimmed, password);
+      setStatus("success");
+      navigate("notes");
+    } catch (err) {
+      setStatus("error");
+      setFormError(
+        err instanceof LoginError
+          ? err.message
+          : "Couldn’t reach the server just now. Try again in a moment.",
+      );
+      focusField("login-password");
+    }
   };
 
-  const fillPreview = () => {
-    setEmail(OWNER_EMAIL);
-    setPassword(OWNER_PASSWORD);
-    setFieldErrors({ email: null, password: null });
-    setFormError(null);
-    setStatus('idle');
-    emailRef.current?.focus();
-  };
-
-  const fieldStyle = (invalid) => ({
+  const fieldStyle = (invalid: boolean) => ({
     backgroundColor: FIELD,
     border: `1px solid ${invalid ? alpha(brand.accentColor, 0.75) : HAIR}`,
     borderRadius: brand.radius,
@@ -167,25 +148,27 @@ export default function Screen() {
   });
 
   const liveMessage =
-    status === 'checking'
-      ? 'Checking your credentials.'
-      : status === 'success'
-      ? 'Signed in. Opening your notes.'
-      : formError || '';
+    status === "checking"
+      ? "Checking your credentials."
+      : status === "success"
+        ? "Signed in. Opening your notes."
+        : formError || "";
 
   return (
     <div
       className="qd-scope min-h-screen w-full"
-      style={{
-        backgroundColor: brand.backgroundColor,
-        fontFamily: BODY_FONT,
-        color: BODY,
-        '--qd-ring': brand.primaryColor,
-        '--qd-tint': TINT,
-        '--qd-ink': INK,
-        '--qd-hair-strong': HAIR_STRONG,
-        '--qd-radius': brand.radius,
-      }}
+      style={
+        {
+          backgroundColor: brand.backgroundColor,
+          fontFamily: BODY_FONT,
+          color: BODY,
+          "--qd-ring": brand.primaryColor,
+          "--qd-tint": TINT,
+          "--qd-ink": INK,
+          "--qd-hair-strong": HAIR_STRONG,
+          "--qd-radius": brand.radius,
+        } as React.CSSProperties
+      }
     >
       <style>{STYLES}</style>
 
@@ -194,7 +177,11 @@ export default function Screen() {
         <div className="flex items-center gap-3">
           <span
             className="flex h-9 w-9 items-center justify-center"
-            style={{ border: `1px solid ${alpha(brand.primaryColor, 0.6)}`, borderRadius: brand.radius, color: brand.primaryColor }}
+            style={{
+              border: `1px solid ${alpha(brand.primaryColor, 0.6)}`,
+              borderRadius: brand.radius,
+              color: brand.primaryColor,
+            }}
             aria-hidden="true"
           >
             <Icons.FileText className="h-4 w-4" />
@@ -209,7 +196,7 @@ export default function Screen() {
 
         <div className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[1fr_minmax(0,460px)] lg:gap-16 lg:py-16">
           {/* Left pane — the ruled desk */}
-          <section className="qd-fade order-2 lg:order-1" aria-labelledby={undefined}>
+          <section className="qd-fade order-2 lg:order-1">
             <div
               className="relative py-6 pl-8 sm:pl-10"
               style={{
@@ -233,14 +220,21 @@ export default function Screen() {
               </p>
             </div>
 
-            <ul className="mt-10 hidden max-w-[56ch] lg:block" aria-label="What’s behind the sign-in">
+            <ul
+              className="mt-10 hidden max-w-[56ch] lg:block"
+              aria-label="What’s behind the sign-in"
+            >
               {FACTS.map((fact, i) => (
                 <li
                   key={fact.text}
                   className="flex items-start gap-4 py-4"
-                  style={{ borderTop: i === 0 ? 'none' : `1px solid ${HAIR}` }}
+                  style={{ borderTop: i === 0 ? "none" : `1px solid ${HAIR}` }}
                 >
-                  <fact.Icon className="mt-[3px] h-4 w-4 shrink-0" style={{ color: alpha(brand.primaryColor, 0.9) }} aria-hidden="true" />
+                  <fact.Icon
+                    className="mt-[3px] h-4 w-4 shrink-0"
+                    style={{ color: alpha(brand.primaryColor, 0.9) }}
+                    aria-hidden="true"
+                  />
                   <span className="text-[15px] leading-[1.6]" style={{ color: BODY }}>
                     {fact.text}
                   </span>
@@ -254,11 +248,19 @@ export default function Screen() {
             {noticeOpen && (
               <div
                 className="mb-5 flex items-start gap-3 px-4 py-3"
-                style={{ backgroundColor: SURFACE, border: `1px solid ${HAIR}`, borderRadius: brand.radius }}
+                style={{
+                  backgroundColor: SURFACE,
+                  border: `1px solid ${HAIR}`,
+                  borderRadius: brand.radius,
+                }}
               >
-                <Icons.Clock className="mt-[3px] h-4 w-4 shrink-0" style={{ color: MUTED }} aria-hidden="true" />
+                <Icons.Clock
+                  className="mt-[3px] h-4 w-4 shrink-0"
+                  style={{ color: MUTED }}
+                  aria-hidden="true"
+                />
                 <p className="flex-1 text-[14px] leading-[1.55]" style={{ color: MUTED }}>
-                  Your last session ended on Fri 24 Oct at 18:42. Sign in to pick the notebook back up.
+                  Sign in to pick your notebook back up.
                 </p>
                 <button
                   type="button"
@@ -276,9 +278,9 @@ export default function Screen() {
               className="relative overflow-hidden"
               style={{
                 backgroundColor: SURFACE,
-                border: `1px solid ${status === 'success' ? alpha(brand.primaryColor, 0.6) : HAIR}`,
+                border: `1px solid ${status === "success" ? alpha(brand.primaryColor, 0.6) : HAIR}`,
                 borderRadius: brand.radius,
-                transition: 'border-color .3s ease',
+                transition: "border-color .3s ease",
               }}
             >
               <span
@@ -288,19 +290,21 @@ export default function Screen() {
               />
 
               <div className="py-8 pl-10 pr-6 sm:pr-8 lg:pl-12">
-                <h1 data-wf="b-0-0" className="text-[28px] leading-tight" style={{ fontFamily: HEAD_FONT, fontWeight: 600, color: INK }}>
+                <h1
+                  className="text-[28px] leading-tight"
+                  style={{ fontFamily: HEAD_FONT, fontWeight: 600, color: INK }}
+                >
                   Log in to Notes
                 </h1>
                 <p className="mt-2 max-w-[48ch] text-[15px] leading-[1.6]" style={{ color: MUTED }}>
-                  This app holds exactly one account. There’s no sign-up to follow — the credentials
-                  were set when the desk was built.
+                  This app holds exactly one account. There’s no sign-up to follow — the
+                  credentials were set when the desk was built.
                 </p>
 
                 <div className="my-6" style={{ borderTop: `1px solid ${HAIR}` }} />
 
                 {formError && (
                   <div
-                    key={misses}
                     role="alert"
                     className="qd-shake mb-5 flex items-start gap-3 px-4 py-3"
                     style={{
@@ -309,21 +313,19 @@ export default function Screen() {
                       borderRadius: brand.radius,
                     }}
                   >
-                    <Icons.AlertCircle className="mt-[2px] h-4 w-4 shrink-0" style={{ color: lighten(brand.accentColor, 0.3) }} aria-hidden="true" />
-                    <div className="text-[14px] leading-[1.55]" style={{ color: lighten(brand.accentColor, 0.42) }}>
+                    <Icons.AlertCircle
+                      className="mt-[2px] h-4 w-4 shrink-0"
+                      style={{ color: lighten(brand.accentColor, 0.3) }}
+                      aria-hidden="true"
+                    />
+                    <div
+                      className="text-[14px] leading-[1.55]"
+                      style={{ color: lighten(brand.accentColor, 0.42) }}
+                    >
                       <span className="font-semibold" style={{ fontFamily: HEAD_FONT }}>
-                        Not accepted.{' '}
+                        Not accepted.{" "}
                       </span>
                       {formError}
-                      {locked && (
-                        <span className="mt-2 block" style={{ color: MUTED }}>
-                          Try again in{' '}
-                          <span style={{ fontVariantNumeric: 'tabular-nums', color: INK }}>
-                            0:{String(cooldown).padStart(2, '0')}
-                          </span>
-                          .
-                        </span>
-                      )}
                     </div>
                   </div>
                 )}
@@ -331,12 +333,15 @@ export default function Screen() {
                 <form onSubmit={handleSubmit} noValidate>
                   <div className="space-y-5">
                     <div>
-                      <Label htmlFor="login-email" className="mb-2 block text-[13px] tracking-wide" style={{ fontFamily: HEAD_FONT, color: BODY }}>
+                      <Label
+                        htmlFor="login-email"
+                        className="mb-2 block text-[13px] tracking-wide"
+                        style={{ fontFamily: HEAD_FONT, color: BODY }}
+                      >
                         Email
                       </Label>
                       <Input
                         id="login-email"
-                        ref={emailRef}
                         type="email"
                         name="email"
                         autoComplete="username"
@@ -348,13 +353,17 @@ export default function Screen() {
                           setEmail(e.target.value);
                           if (fieldErrors.email) setFieldErrors((f) => ({ ...f, email: null }));
                         }}
-                        aria-invalid={fieldErrors.email ? 'true' : 'false'}
-                        aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
+                        aria-invalid={fieldErrors.email ? "true" : "false"}
+                        aria-describedby={fieldErrors.email ? "login-email-error" : undefined}
                         className="qd-field h-11 w-full px-3 text-[15px]"
                         style={fieldStyle(Boolean(fieldErrors.email))}
                       />
                       {fieldErrors.email && (
-                        <p id="login-email-error" className="qd-fade mt-2 flex items-center gap-2 text-[13px]" style={{ color: lighten(brand.accentColor, 0.38) }}>
+                        <p
+                          id="login-email-error"
+                          className="qd-fade mt-2 flex items-center gap-2 text-[13px]"
+                          style={{ color: lighten(brand.accentColor, 0.38) }}
+                        >
                           <Icons.AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
                           {fieldErrors.email}
                         </p>
@@ -363,7 +372,11 @@ export default function Screen() {
 
                     <div>
                       <div className="mb-2 flex items-baseline justify-between gap-3">
-                        <Label htmlFor="login-password" className="block text-[13px] tracking-wide" style={{ fontFamily: HEAD_FONT, color: BODY }}>
+                        <Label
+                          htmlFor="login-password"
+                          className="block text-[13px] tracking-wide"
+                          style={{ fontFamily: HEAD_FONT, color: BODY }}
+                        >
                           Password
                         </Label>
                         <button
@@ -371,30 +384,40 @@ export default function Screen() {
                           onClick={() => setReveal((v) => !v)}
                           aria-pressed={reveal}
                           className="qd-ghost px-2 py-1 text-[13px]"
-                          style={{ borderRadius: brand.radius, color: MUTED, fontFamily: HEAD_FONT }}
+                          style={{
+                            borderRadius: brand.radius,
+                            color: MUTED,
+                            fontFamily: HEAD_FONT,
+                          }}
                         >
-                          {reveal ? 'Hide password' : 'Show password'}
+                          {reveal ? "Hide password" : "Show password"}
                         </button>
                       </div>
                       <Input
                         id="login-password"
-                        ref={passwordRef}
-                        type={reveal ? 'text' : 'password'}
+                        type={reveal ? "text" : "password"}
                         name="password"
                         autoComplete="current-password"
                         value={password}
                         disabled={busy}
                         onChange={(e) => {
                           setPassword(e.target.value);
-                          if (fieldErrors.password) setFieldErrors((f) => ({ ...f, password: null }));
+                          if (fieldErrors.password)
+                            setFieldErrors((f) => ({ ...f, password: null }));
                         }}
-                        aria-invalid={fieldErrors.password ? 'true' : 'false'}
-                        aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
+                        aria-invalid={fieldErrors.password ? "true" : "false"}
+                        aria-describedby={
+                          fieldErrors.password ? "login-password-error" : undefined
+                        }
                         className="qd-field h-11 w-full px-3 text-[15px]"
                         style={fieldStyle(Boolean(fieldErrors.password))}
                       />
                       {fieldErrors.password && (
-                        <p id="login-password-error" className="qd-fade mt-2 flex items-center gap-2 text-[13px]" style={{ color: lighten(brand.accentColor, 0.38) }}>
+                        <p
+                          id="login-password-error"
+                          className="qd-fade mt-2 flex items-center gap-2 text-[13px]"
+                          style={{ color: lighten(brand.accentColor, 0.38) }}
+                        >
                           <Icons.AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
                           {fieldErrors.password}
                         </p>
@@ -408,53 +431,60 @@ export default function Screen() {
                         disabled={busy}
                         onChange={(e) => setKeepSignedIn(e.target.checked)}
                       />
-                      <Label htmlFor="login-keep" className="text-[14px] leading-tight" style={{ color: MUTED }}>
+                      <Label
+                        htmlFor="login-keep"
+                        className="text-[14px] leading-tight"
+                        style={{ color: MUTED }}
+                      >
                         Keep me signed in on this device
                       </Label>
                     </div>
 
                     <Button
                       type="submit"
-                      data-wf="b-3-0"
-                      disabled={busy || locked}
+                      disabled={busy}
                       className="qd-primary flex h-12 w-full items-center justify-center gap-2 text-[15px]"
                       style={{
-                        backgroundColor: status === 'success' ? alpha(brand.primaryColor, 0.9) : brand.primaryColor,
+                        backgroundColor:
+                          status === "success"
+                            ? alpha(brand.primaryColor, 0.9)
+                            : brand.primaryColor,
                         color: brand.backgroundColor,
                         borderRadius: brand.radius,
                         fontFamily: HEAD_FONT,
                         fontWeight: 600,
-                        border: 'none',
+                        border: "none",
                       }}
                     >
-                      {status === 'checking' && (
+                      {status === "checking" && (
                         <>
                           <span className="flex items-center gap-1" aria-hidden="true">
-                            <span className="qd-dot h-1.5 w-1.5 rounded-full" style={{ backgroundColor: brand.backgroundColor }} />
-                            <span className="qd-dot h-1.5 w-1.5 rounded-full" style={{ backgroundColor: brand.backgroundColor }} />
-                            <span className="qd-dot h-1.5 w-1.5 rounded-full" style={{ backgroundColor: brand.backgroundColor }} />
+                            <span
+                              className="qd-dot h-1.5 w-1.5 rounded-full"
+                              style={{ backgroundColor: brand.backgroundColor }}
+                            />
+                            <span
+                              className="qd-dot h-1.5 w-1.5 rounded-full"
+                              style={{ backgroundColor: brand.backgroundColor }}
+                            />
+                            <span
+                              className="qd-dot h-1.5 w-1.5 rounded-full"
+                              style={{ backgroundColor: brand.backgroundColor }}
+                            />
                           </span>
                           Checking your credentials
                         </>
                       )}
-                      {status === 'success' && (
+                      {status === "success" && (
                         <>
                           <Icons.Check className="h-4 w-4" aria-hidden="true" />
                           Opening your notes
                         </>
                       )}
-                      {status !== 'checking' && status !== 'success' && (
+                      {status !== "checking" && status !== "success" && (
                         <>
-                          {locked ? (
-                            <>
-                              Locked for 0:{String(cooldown).padStart(2, '0')}
-                            </>
-                          ) : (
-                            <>
-                              Log in
-                              <Icons.ArrowRight className="h-4 w-4" aria-hidden="true" />
-                            </>
-                          )}
+                          Log in
+                          <Icons.ArrowRight className="h-4 w-4" aria-hidden="true" />
                         </>
                       )}
                     </Button>
@@ -464,26 +494,6 @@ export default function Screen() {
                 <p className="sr-only" role="status" aria-live="polite">
                   {liveMessage}
                 </p>
-
-                <div className="mt-6" style={{ borderTop: `1px solid ${HAIR}` }} />
-
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-[13px] leading-[1.6]" style={{ color: MUTED }}>
-                    Preview account —{' '}
-                    <span style={{ color: INK }}>{OWNER_EMAIL}</span>
-                    {' · '}
-                    <span style={{ color: INK, fontVariantNumeric: 'tabular-nums' }}>{OWNER_PASSWORD}</span>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={fillPreview}
-                    disabled={busy}
-                    className="qd-ghost px-3 py-2 text-[13px] disabled:opacity-50"
-                    style={{ border: `1px solid ${HAIR}`, borderRadius: brand.radius, color: BODY, fontFamily: HEAD_FONT }}
-                  >
-                    Fill these in
-                  </button>
-                </div>
               </div>
             </Card>
 
@@ -494,11 +504,18 @@ export default function Screen() {
           </section>
         </div>
 
-        <footer className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-8 text-[13px]" style={{ borderTop: `1px solid ${HAIR}`, color: MUTED }}>
+        <footer
+          className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-8 text-[13px]"
+          style={{ borderTop: `1px solid ${HAIR}`, color: MUTED }}
+        >
           <span>Quorq Notes — a single-desk notebook.</span>
-          <span style={{ color: HAIR_STRONG }} aria-hidden="true">·</span>
+          <span style={{ color: HAIR_STRONG }} aria-hidden="true">
+            ·
+          </span>
           <span>Free to use, with no plans or billing.</span>
-          <span style={{ color: HAIR_STRONG }} aria-hidden="true">·</span>
+          <span style={{ color: HAIR_STRONG }} aria-hidden="true">
+            ·
+          </span>
           <span>Notes never leave this app’s own store.</span>
         </footer>
       </div>
