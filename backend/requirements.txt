@@ -17,8 +17,5 @@ ruff>=0.6
 
 # BEGIN QUORQ ARCHITECTURE PACKAGES
 passlib[bcrypt]>=1.7.4
-# passlib's bcrypt backend reads `bcrypt.__about__`, which 4.1+ removed; pinned
-# below 4.1 so password hashing does not raise on every call.
-bcrypt==4.0.1
 PyJWT>=2.8.0
 # END QUORQ ARCHITECTURE PACKAGES

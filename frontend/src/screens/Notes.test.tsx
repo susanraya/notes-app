@@ -37,7 +37,12 @@ describe("Notes screen", () => {
 
   it("[AC-024] renders notes fetched from GET /notes with no seeded sample data", async () => {
     mockFetchOnce([
-      { id: "n_1", title: "Groceries", body: "<p>Milk and eggs</p>", updated_at: "2026-10-26T14:32:00" },
+      {
+        id: "n_1",
+        title: "Groceries",
+        body: "<p>Milk and eggs</p>",
+        updated_at: "2026-10-26T14:32:00",
+      },
     ]);
 
     renderNotes();
@@ -45,7 +50,9 @@ describe("Notes screen", () => {
     await waitFor(() => expect(screen.getByText("Groceries")).toBeInTheDocument());
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("/notes"),
-      expect.objectContaining({ headers: expect.objectContaining({ Authorization: "Bearer test-token" }) }),
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer test-token" }),
+      }),
     );
     // None of the previously hardcoded sample notes should ever appear.
     expect(screen.queryByText("Sprint retro takeaways")).not.toBeInTheDocument();
@@ -57,9 +64,7 @@ describe("Notes screen", () => {
 
     renderNotes();
 
-    await waitFor(() =>
-      expect(screen.getByText(/nothing written here yet/i)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/nothing written here yet/i)).toBeInTheDocument());
   });
 
   it("shows an error state and can retry when the list fails to load", async () => {
@@ -68,7 +73,9 @@ describe("Notes screen", () => {
 
     renderNotes();
 
-    await waitFor(() => expect(screen.getByText(/couldn.t load your notes just now/i)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText(/couldn.t load your notes just now/i)).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /try again/i }));
 
