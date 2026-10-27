@@ -1,8 +1,8 @@
 export const brand = {
-  primaryColor: "#a855f7",
-  accentColor: "#f43f5e",
-  neutralColor: "#a5a1c8",
-  backgroundColor: "#0f0725",
+  primaryColor: "#ffffff",
+  accentColor: "#4d4d4d",
+  neutralColor: "#9a9a9a",
+  backgroundColor: "#000000",
   radius: "0.375rem",
   fontHeading: "Public Sans Semibold",
   fontBody: "Source Serif 4",
