@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -22,6 +22,14 @@ function mockFetchOnce(body: unknown, status = 200) {
     status,
     json: async () => body,
   });
+}
+
+/** Selects the whole body (the keymap StarterKit includes binds Mod-a to
+ * select-all), the way a person would before applying formatting to text
+ * they've already written. */
+function selectAllInBody(pm: HTMLElement) {
+  pm.focus();
+  fireEvent.keyDown(pm, { key: "a", code: "KeyA", ctrlKey: true });
 }
 
 describe("Note screen", () => {
@@ -249,5 +257,154 @@ describe("Note screen", () => {
     await waitFor(() => expect(localStorage.getItem("qd_notes_token")).toBeNull());
     expect(screen.queryByText(/stored content here/i)).not.toBeInTheDocument();
     expect((screen.getByLabelText(/title/i) as HTMLInputElement).value).toBe("");
+  });
+
+  // ---------------------------------------------------------------------
+  // US-004 -- AC-008: bold, list, heading and link formatting on selected
+  // text shows in the editor and round-trips through a save and reopen.
+  // ---------------------------------------------------------------------
+
+  it("[AC-008] applying bold to selected text shows a <strong> in the editor, is marked pressed, and is sent to PUT /notes/{id}", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+
+    const pm = container.querySelector(".ProseMirror") as HTMLElement;
+    selectAllInBody(pm);
+    fireEvent.click(screen.getByRole("button", { name: "Bold" }));
+
+    // Shown in the editor immediately, and the toolbar reflects the active state.
+    expect(pm.querySelector("strong")).not.toBeNull();
+    expect(pm.querySelector("strong")?.textContent).toBe("Format me");
+    expect(screen.getByRole("button", { name: "Bold" })).toHaveAttribute("aria-pressed", "true");
+
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p><strong>Format me</strong></p>",
+      updated_at: "2026-10-27T10:00:00",
+    });
+
+    // Retained when saved: the markup is in the autosave payload, not
+    // dropped before it reaches the server.
+    await waitFor(
+      () =>
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining("/notes/n_1"),
+          expect.objectContaining({ method: "PUT" }),
+        ),
+      { timeout: 2000 },
+    );
+    const call = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([, init]) => (init as RequestInit)?.method === "PUT",
+    );
+    const sentBody = JSON.parse((call?.[1] as RequestInit).body as string);
+    expect(sentBody.body).toContain("<strong>Format me</strong>");
+  });
+
+  it("[AC-008] applying a heading, a bullet list and a link to selected text each show the matching tag in the editor", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+
+    const pm = container.querySelector(".ProseMirror") as HTMLElement;
+
+    selectAllInBody(pm);
+    fireEvent.click(screen.getByRole("button", { name: "Heading" }));
+    expect(pm.querySelector("h3")).not.toBeNull();
+    expect(pm.querySelector("h3")?.textContent).toBe("Format me");
+
+    selectAllInBody(pm);
+    fireEvent.click(screen.getByRole("button", { name: "List" }));
+    expect(pm.querySelector("ul > li")).not.toBeNull();
+
+    selectAllInBody(pm);
+    fireEvent.click(screen.getByRole("button", { name: "Link" }));
+    expect(pm.querySelector("a")).not.toBeNull();
+  });
+
+  it("[AC-008] formatting applied before a save is still shown when the note is reopened", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container, unmount } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+
+    const pm = container.querySelector(".ProseMirror") as HTMLElement;
+    selectAllInBody(pm);
+    fireEvent.click(screen.getByRole("button", { name: "Bold" }));
+    selectAllInBody(pm);
+    fireEvent.click(screen.getByRole("button", { name: "List" }));
+
+    const savedHtml = "<ul><li><p><strong>Format me</strong></p></li></ul>";
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: savedHtml,
+      updated_at: "2026-10-27T10:00:00",
+    });
+    await waitFor(
+      () =>
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining("/notes/n_1"),
+          expect.objectContaining({ method: "PUT" }),
+        ),
+      { timeout: 2000 },
+    );
+
+    unmount();
+
+    // Reopening re-fetches the note; the server's stored markup -- not
+    // anything left in memory from the editing session -- is what renders.
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: savedHtml,
+      updated_at: "2026-10-27T10:00:00",
+    });
+    const { container: reopened } = renderNote("/note?id=n_1");
+
+    await waitFor(() =>
+      expect((reopened.querySelector(".ProseMirror") as HTMLElement).querySelector("strong")).not
+        .toBeNull(),
+    );
+    const reopenedPm = reopened.querySelector(".ProseMirror") as HTMLElement;
+    expect(reopenedPm.querySelector("ul > li")).not.toBeNull();
+    expect(reopenedPm.querySelector("strong")?.textContent).toBe("Format me");
+  });
+
+  // ---------------------------------------------------------------------
+  // US-004 -- AC-009: the editor offers no option to add file or image
+  // attachments.
+  // ---------------------------------------------------------------------
+
+  it("[AC-009] the editor offers no option to add file or image attachments", () => {
+    renderNote("/note");
+
+    expect(document.querySelector('input[type="file"]')).toBeNull();
+    for (const name of [/attach/i, /image/i, /upload/i, /photo/i, /picture/i]) {
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    }
+
+    // The formatting toolbar offers exactly the four formatting controls --
+    // nothing that adds a file or an image alongside them.
+    const toolbar = screen.getByRole("group", { name: /formatting/i });
+    const buttonLabels = within(toolbar)
+      .getAllByRole("button")
+      .map((button) => button.textContent);
+    expect(buttonLabels).toEqual(["Bold", "Heading", "List", "Link"]);
   });
 });

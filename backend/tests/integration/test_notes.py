@@ -247,6 +247,76 @@ def test_rich_text_html_body_round_trips_through_post_then_get(created_note_ids)
 
 
 # ---------------------------------------------------------------------------
+# US-004 -- AC-008: the four rich-text formats this story adds -- bold,
+# heading, bulleted list and link -- all round-trip byte-for-byte through
+# PUT (the auto-save call the editor makes) then GET (reopening the note).
+# ---------------------------------------------------------------------------
+
+
+def test_ac008_bold_heading_list_and_link_markup_round_trips_through_put_then_get(
+    created_note_ids,
+):
+    headers = _auth_headers()
+    created = client.post(
+        "/notes", json={"title": "Formatted", "body": "<p>plain</p>"}, headers=headers
+    ).json()
+    created_note_ids.append(created["id"])
+
+    formatted_html = (
+        "<h3>A heading</h3>"
+        "<p>Some <strong>bold</strong> words and a "
+        '<a href="https://example.com">link</a>.</p>'
+        "<ul><li><p>first item</p></li><li><p>second item</p></li></ul>"
+    )
+
+    put_response = client.put(
+        f"/notes/{created['id']}",
+        json={"title": "Formatted", "body": formatted_html},
+        headers=headers,
+    )
+    assert put_response.status_code == 200
+    assert put_response.json()["body"] == formatted_html
+
+    reopened = client.get(f"/notes/{created['id']}", headers=headers)
+    assert reopened.status_code == 200
+    body = reopened.json()["body"]
+    assert body == formatted_html
+    assert "<strong>bold</strong>" in body
+    assert "<h3>A heading</h3>" in body
+    assert "<ul>" in body and "<li>" in body
+    assert '<a href="https://example.com">link</a>' in body
+
+
+# ---------------------------------------------------------------------------
+# US-004 -- AC-009: the understanding excludes attachments -- no endpoint
+# for uploading or attaching a file or image exists in the approved API.
+# ---------------------------------------------------------------------------
+
+
+def test_ac009_openapi_document_exposes_no_attachment_or_upload_endpoint():
+    paths = client.get("/openapi.json").json()["paths"]
+
+    for path in paths:
+        lowered = path.lower()
+        assert "attach" not in lowered
+        assert "upload" not in lowered
+        assert "file" not in lowered
+        assert "image" not in lowered
+
+
+def test_ac009_note_schema_has_no_attachment_or_file_field():
+    headers = _auth_headers()
+    created = client.post(
+        "/notes", json={"title": "No attachments here", "body": "plain text"}, headers=headers
+    )
+
+    assert created.status_code == 201
+    keys = {key.lower() for key in created.json()}
+    for forbidden in ("attachment", "attachments", "file", "files", "image", "images"):
+        assert forbidden not in keys
+
+
+# ---------------------------------------------------------------------------
 # US-006 -- AC-011: editing a note stores the change and shows it on reopen
 # ---------------------------------------------------------------------------
 
@@ -381,9 +451,7 @@ def test_ac012_each_successive_edit_advances_updated_at_again(created_note_ids):
     created_note_ids.append(created["id"])
 
     time.sleep(1.1)
-    first_edit = client.put(
-        f"/notes/{created['id']}", json={"title": "a2"}, headers=headers
-    ).json()
+    first_edit = client.put(f"/notes/{created['id']}", json={"title": "a2"}, headers=headers).json()
 
     time.sleep(1.1)
     second_edit = client.put(
