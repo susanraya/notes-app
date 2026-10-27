@@ -20,9 +20,7 @@ _OWNER_PASSWORD = os.environ["OWNER_PASSWORD"]
 
 
 def _login_token() -> str:
-    response = client.post(
-        "/auth/login", json={"email": _OWNER_EMAIL, "password": _OWNER_PASSWORD}
-    )
+    response = client.post("/auth/login", json={"email": _OWNER_EMAIL, "password": _OWNER_PASSWORD})
     assert response.status_code == 200
     return response.json()["access_token"]
 
@@ -225,7 +223,7 @@ def test_ac025_openapi_document_exposes_no_sync_import_or_export_endpoint():
 def test_rich_text_html_body_round_trips_through_post_then_get(created_note_ids):
     headers = _auth_headers()
     html = (
-        '<h3>Heading</h3><p>Some <strong>bold</strong> text and a '
+        "<h3>Heading</h3><p>Some <strong>bold</strong> text and a "
         '<a href="https://example.com">link</a></p><ul><li>one</li><li>two</li></ul>'
     )
 

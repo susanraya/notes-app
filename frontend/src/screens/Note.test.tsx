@@ -54,11 +54,15 @@ describe("Note screen", () => {
 
     renderNote("/note?id=n_1");
 
-    await waitFor(() => expect((screen.getByLabelText(/title/i) as HTMLInputElement).value).toBe("Groceries"));
+    await waitFor(() =>
+      expect((screen.getByLabelText(/title/i) as HTMLInputElement).value).toBe("Groceries"),
+    );
     await waitFor(() => expect(screen.getByText("Stored content here")).toBeInTheDocument());
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("/notes/n_1"),
-      expect.objectContaining({ headers: expect.objectContaining({ Authorization: "Bearer test-token" }) }),
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer test-token" }),
+      }),
     );
   });
 
@@ -98,7 +102,9 @@ describe("Note screen", () => {
       updated_at: "2026-10-26T14:32:00",
     });
     renderNote("/note?id=n_1");
-    await waitFor(() => expect((screen.getByLabelText(/title/i) as HTMLInputElement).value).toBe("Groceries"));
+    await waitFor(() =>
+      expect((screen.getByLabelText(/title/i) as HTMLInputElement).value).toBe("Groceries"),
+    );
 
     mockFetchOnce({
       id: "n_1",

@@ -290,12 +290,7 @@ export default function Screen() {
 
   const st = status === "loading" || status === "loadError" ? STATUS.idle : STATUS[status];
 
-  const toolButton = (
-    id: string,
-    label: string,
-    isActive: boolean | null,
-    onClick: () => void,
-  ) => (
+  const toolButton = (id: string, label: string, isActive: boolean | null, onClick: () => void) => (
     <button
       key={id}
       type="button"
