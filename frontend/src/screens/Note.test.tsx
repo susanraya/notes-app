@@ -378,8 +378,9 @@ describe("Note screen", () => {
     const { container: reopened } = renderNote("/note?id=n_1");
 
     await waitFor(() =>
-      expect((reopened.querySelector(".ProseMirror") as HTMLElement).querySelector("strong")).not
-        .toBeNull(),
+      expect(
+        (reopened.querySelector(".ProseMirror") as HTMLElement).querySelector("strong"),
+      ).not.toBeNull(),
     );
     const reopenedPm = reopened.querySelector(".ProseMirror") as HTMLElement;
     expect(reopenedPm.querySelector("ul > li")).not.toBeNull();
