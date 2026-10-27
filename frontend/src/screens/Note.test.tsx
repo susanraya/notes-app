@@ -632,4 +632,114 @@ describe("Note screen", () => {
     expect(isGreyscale(getComputedStyle(heading).color)).toBe(true);
     expect(isGreyscale(getComputedStyle(bold).color)).toBe(true);
   });
+
+  // ---------------------------------------------------------------------
+  // US-018-1 -- AC-034 / AC-035: viewing and editing an existing saved note
+  // uses the same black-and-white palette, with no indigo/purple anywhere.
+  // ---------------------------------------------------------------------
+
+  it("[AC-034] opening a saved note renders its title, body and applied formatting in the black-and-white palette with no indigo/purple remaining", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<h3>Heading</h3><p><strong>Bold</strong> and <a href=\"https://example.com\">a link</a></p><ul><li><p>Item</p></li></ul>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Heading")).toBeInTheDocument());
+
+    const titleInput = screen.getByLabelText(/title/i) as HTMLInputElement;
+    expect(isGreyscale(getComputedStyle(titleInput).color)).toBe(true);
+    expect(isGreyscale(getComputedStyle(titleInput).backgroundColor)).toBe(true);
+
+    const bodyField = screen.getByRole("textbox", { name: /body/i });
+    expect(isGreyscale(getComputedStyle(bodyField).color)).toBe(true);
+
+    const heading = container.querySelector(".ProseMirror h3") as HTMLElement;
+    const bold = container.querySelector(".ProseMirror strong") as HTMLElement;
+    const link = container.querySelector(".ProseMirror a") as HTMLElement;
+    expect(isGreyscale(getComputedStyle(heading).color)).toBe(true);
+    expect(isGreyscale(getComputedStyle(bold).color)).toBe(true);
+    expect(isGreyscale(getComputedStyle(link).color)).toBe(true);
+
+    expect(container.innerHTML.toLowerCase()).not.toMatch(/indigo|purple|violet/);
+  });
+
+  it("[AC-035] the edit screen for an existing note uses the identical palette tokens as the view state", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container: viewContainer, unmount: unmountView } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+    const viewTitle = viewContainer.querySelector("#note-title") as HTMLInputElement;
+    const viewTitleStyles = getComputedStyle(viewTitle);
+    const viewToolbarButton = within(
+      within(viewContainer).getByRole("group", { name: /formatting/i }),
+    ).getByRole("button", { name: "Bold" });
+    const viewToolbarStyles = getComputedStyle(viewToolbarButton);
+    unmountView();
+
+    mockFetchOnce({
+      id: "n_2",
+      title: "Shopping",
+      body: "<p>Edit me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container: editContainer } = renderNote("/note?id=n_2");
+    await waitFor(() => expect(screen.getByText("Edit me")).toBeInTheDocument());
+    const editTitle = editContainer.querySelector("#note-title") as HTMLInputElement;
+    const editTitleStyles = getComputedStyle(editTitle);
+    const editToolbarButton = within(
+      within(editContainer).getByRole("group", { name: /formatting/i }),
+    ).getByRole("button", { name: "Bold" });
+    const editToolbarStyles = getComputedStyle(editToolbarButton);
+
+    expect(editTitleStyles.color).toBe(viewTitleStyles.color);
+    expect(editTitleStyles.backgroundColor).toBe(viewTitleStyles.backgroundColor);
+    expect(editTitleStyles.fontFamily).toBe(viewTitleStyles.fontFamily);
+    expect(editToolbarStyles.color).toBe(viewToolbarStyles.color);
+    expect(editToolbarStyles.backgroundColor).toBe(viewToolbarStyles.backgroundColor);
+    expect(editToolbarStyles.borderColor || editToolbarStyles.borderTopColor).toBe(
+      viewToolbarStyles.borderColor || viewToolbarStyles.borderTopColor,
+    );
+  });
+
+  it("the status chip, save/last-updated indicator, back and delete affordances render in the monochrome palette for a saved note", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Milk</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText(/last updated/i)).toBeInTheDocument());
+
+    const statusChip = screen.getByText(/last updated/i).closest("p") as HTMLElement;
+    expect(isGreyscale(getComputedStyle(statusChip).color)).toBe(true);
+    expect(isGreyscale(getComputedStyle(statusChip).backgroundColor)).toBe(true);
+
+    const backButton = screen.getByRole("button", { name: /back to notes/i });
+    expect(isGreyscale(getComputedStyle(backButton).color)).toBe(true);
+
+    const deleteButton = screen.getByRole("button", { name: /^delete$/i });
+    expect(isGreyscale(getComputedStyle(deleteButton).color)).toBe(true);
+    expect(isGreyscale(getComputedStyle(deleteButton).borderColor)).toBe(true);
+  });
+
+  it("the load-error message for a saved note renders in the monochrome palette", async () => {
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      json: async () => ({ detail: "Not found" }),
+    });
+
+    renderNote("/note?id=n_missing");
+
+    const alert = await screen.findByRole("alert");
+    expect(isGreyscale(getComputedStyle(alert).color)).toBe(true);
+    expect(isGreyscale(getComputedStyle(alert).backgroundColor)).toBe(true);
+  });
 });
