@@ -26,6 +26,13 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/notes$/);
 }
 
+/** Deletes the note currently open in the editor, via its own delete dialog. */
+async function deleteOpenNote(page: Page) {
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  await page.getByRole("button", { name: "Delete note" }).click();
+  await expect(page).toHaveURL(/\/notes$/);
+}
+
 /** Parses `rgb(...)` / `rgba(...)` into channels, 0-255 plus 0-1 alpha. */
 function parseRgba(value: string): [number, number, number, number] {
   const m = /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)/i.exec(
@@ -235,7 +242,9 @@ test.describe("[AC-030] notes list, search box and highlights are monochrome", (
 
     // The highlighted accent rail that runs alongside the list.
     const accentRail = page.locator("ul > span[aria-hidden='true']").first();
-    const railBg = await accentRail.evaluate((el) => getComputedStyle(el as HTMLElement).backgroundColor);
+    const railBg = await accentRail.evaluate(
+      (el) => getComputedStyle(el as HTMLElement).backgroundColor,
+    );
     expect(isGreyscale(railBg)).toBe(true);
 
     expectNoForbiddenColors(await allComputedColors(page));
@@ -261,7 +270,9 @@ test("[AC-031] the no-results indication for an unmatched search term is monochr
   const emptyHeading = page.getByText(/no notes match/i);
   await expect(emptyHeading).toBeVisible({ timeout: 5000 });
 
-  const headingColor = await emptyHeading.evaluate((el) => getComputedStyle(el as HTMLElement).color);
+  const headingColor = await emptyHeading.evaluate(
+    (el) => getComputedStyle(el as HTMLElement).color,
+  );
   expect(isGreyscale(headingColor)).toBe(true);
 
   const emptyBg = await effectiveBackgroundColor(page, emptyHeading);
@@ -276,4 +287,272 @@ test("[AC-031] the no-results indication for an unmatched search term is monochr
   expect(isGreyscale(clearColor)).toBe(true);
 
   expectNoForbiddenColors(await allComputedColors(page));
+});
+
+test.describe("[AC-032] the new-note editor is monochrome", () => {
+  test("title field, body field and toolbar computed colours are monochrome with no indigo/purple", async ({
+    page,
+  }) => {
+    await login(page);
+    await page.getByRole("button", { name: /new note/i }).click();
+    await expect(page).toHaveURL(/\/note$/);
+
+    const titleField = page.getByLabel("Title");
+    const [titleBg, titleColor] = await titleField.evaluate((el) => {
+      const cs = getComputedStyle(el as HTMLElement);
+      return [cs.backgroundColor, cs.color];
+    });
+    expect(isGreyscale(titleBg)).toBe(true);
+    expect(isGreyscale(titleColor)).toBe(true);
+
+    const bodyField = page.getByRole("textbox", { name: /body/i });
+    const bodyColor = await bodyField.evaluate((el) => getComputedStyle(el as HTMLElement).color);
+    expect(isGreyscale(bodyColor)).toBe(true);
+    const bodyEffectiveBg = await effectiveBackgroundColor(page, bodyField);
+    expect(isGreyscale(bodyEffectiveBg)).toBe(true);
+
+    const toolbar = page.getByRole("group", { name: /formatting/i });
+    for (const name of ["Bold", "Heading", "List", "Link"]) {
+      const btn = toolbar.getByRole("button", { name, exact: true });
+      const [btnBg, btnColor] = await btn.evaluate((el) => {
+        const cs = getComputedStyle(el as HTMLElement);
+        return [cs.backgroundColor, cs.color];
+      });
+      expect(isGreyscale(btnBg)).toBe(true);
+      expect(isGreyscale(btnColor)).toBe(true);
+    }
+
+    expectNoForbiddenColors(await allComputedColors(page));
+  });
+});
+
+test.describe("[AC-033] active toolbar states are monochrome and distinguishable", () => {
+  test("bold, list, heading and link each become monochrome-but-distinguishable once applied", async ({
+    page,
+  }) => {
+    await login(page);
+    await page.getByRole("button", { name: /new note/i }).click();
+    const title = `QA Toolbar State ${Date.now()}`;
+    await page.getByLabel("Title").fill(title);
+    const body = page.locator(".ProseMirror");
+    await body.click();
+    await page.keyboard.type("Toolbar state check");
+    await page.keyboard.press("ControlOrMeta+a");
+
+    const toolbar = page.getByRole("group", { name: /formatting/i });
+
+    // Capture an inactive button's colours as the baseline to compare against.
+    const inactiveLink = toolbar.getByRole("button", { name: "Link", exact: true });
+    const [inactiveBg, inactiveColor] = await inactiveLink.evaluate((el) => {
+      const cs = getComputedStyle(el as HTMLElement);
+      return [cs.backgroundColor, cs.color];
+    });
+    expect(isGreyscale(inactiveBg)).toBe(true);
+    expect(isGreyscale(inactiveColor)).toBe(true);
+
+    for (const name of ["Bold", "Heading", "List"] as const) {
+      await page.keyboard.press("ControlOrMeta+a");
+      const btn = toolbar.getByRole("button", { name, exact: true });
+      await btn.click();
+      await expect(btn).toHaveAttribute("aria-pressed", "true");
+
+      const [activeBg, activeColor] = await btn.evaluate((el) => {
+        const cs = getComputedStyle(el as HTMLElement);
+        return [cs.backgroundColor, cs.color];
+      });
+      expect(isGreyscale(activeBg)).toBe(true);
+      expect(isGreyscale(activeColor)).toBe(true);
+
+      // Distinguishable from an inactive control: at least one of
+      // background or text colour must differ from the inactive baseline.
+      expect(activeBg !== inactiveBg || activeColor !== inactiveColor).toBe(true);
+    }
+
+    await page.keyboard.press("ControlOrMeta+a");
+    const linkBtn = toolbar.getByRole("button", { name: "Link", exact: true });
+    await linkBtn.click();
+    await expect(linkBtn).toHaveAttribute("aria-pressed", "true");
+    const [activeLinkBg, activeLinkColor] = await linkBtn.evaluate((el) => {
+      const cs = getComputedStyle(el as HTMLElement);
+      return [cs.backgroundColor, cs.color];
+    });
+    expect(isGreyscale(activeLinkBg)).toBe(true);
+    expect(isGreyscale(activeLinkColor)).toBe(true);
+    expect(activeLinkBg !== inactiveBg || activeLinkColor !== inactiveColor).toBe(true);
+
+    expectNoForbiddenColors(await allComputedColors(page));
+
+    await expect(page.getByText(/saved.*last updated/i)).toBeVisible({ timeout: 10000 });
+    await deleteOpenNote(page);
+  });
+});
+
+test.describe("[AC-034] a saved note renders monochrome when reopened", () => {
+  test("title, body and formatted content are monochrome on reopen", async ({ page }) => {
+    await login(page);
+    await page.getByRole("button", { name: /new note/i }).click();
+    const title = `QA Saved Monochrome ${Date.now()}`;
+    const bodyText = "Saved note content";
+    await page.getByLabel("Title").fill(title);
+    const body = page.locator(".ProseMirror");
+    await body.click();
+    await page.keyboard.type(bodyText);
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.getByRole("button", { name: "Bold", exact: true }).click();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.getByRole("button", { name: "Heading", exact: true }).click();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.getByRole("button", { name: "List", exact: true }).click();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.getByRole("button", { name: "Link", exact: true }).click();
+    await expect(page.getByText(/saved.*last updated/i)).toBeVisible({ timeout: 10000 });
+
+    await page.getByRole("button", { name: /back to notes/i }).click();
+    await expect(page).toHaveURL(/\/notes$/);
+    await page.getByText(title).click();
+    await expect(page).toHaveURL(/\/note\?id=/);
+
+    const titleField = page.getByLabel("Title");
+    const titleColor = await titleField.evaluate((el) => getComputedStyle(el as HTMLElement).color);
+    expect(isGreyscale(titleColor)).toBe(true);
+
+    const reopenedBody = page.locator(".ProseMirror");
+    const bodyColor = await reopenedBody.evaluate(
+      (el) => getComputedStyle(el as HTMLElement).color,
+    );
+    expect(isGreyscale(bodyColor)).toBe(true);
+
+    const strongColor = await reopenedBody
+      .locator("strong")
+      .first()
+      .evaluate((el) => getComputedStyle(el as HTMLElement).color);
+    expect(isGreyscale(strongColor)).toBe(true);
+
+    const headingColor = await reopenedBody
+      .locator("h3")
+      .first()
+      .evaluate((el) => getComputedStyle(el as HTMLElement).color);
+    expect(isGreyscale(headingColor)).toBe(true);
+
+    const linkColor = await reopenedBody
+      .locator("a")
+      .first()
+      .evaluate((el) => getComputedStyle(el as HTMLElement).color);
+    expect(isGreyscale(linkColor)).toBe(true);
+
+    expectNoForbiddenColors(await allComputedColors(page));
+
+    await deleteOpenNote(page);
+  });
+});
+
+test.describe("[AC-035] the edit screen uses the same palette as the view state", () => {
+  test("title and body colours are identical before and after making an edit", async ({
+    page,
+  }) => {
+    await login(page);
+    await page.getByRole("button", { name: /new note/i }).click();
+    const title = `QA Palette Parity ${Date.now()}`;
+    await page.getByLabel("Title").fill(title);
+    const body = page.locator(".ProseMirror");
+    await body.click();
+    await page.keyboard.type("Palette parity check");
+    await expect(page.getByText(/saved.*last updated/i)).toBeVisible({ timeout: 10000 });
+
+    await page.getByRole("button", { name: /back to notes/i }).click();
+    await expect(page).toHaveURL(/\/notes$/);
+    await page.getByText(title).click();
+    await expect(page).toHaveURL(/\/note\?id=/);
+
+    // "View" state: just-reopened, before any edit.
+    const titleField = page.getByLabel("Title");
+    const [viewTitleBg, viewTitleColor] = await titleField.evaluate((el) => {
+      const cs = getComputedStyle(el as HTMLElement);
+      return [cs.backgroundColor, cs.color];
+    });
+    const viewBodyColor = await body.evaluate((el) => getComputedStyle(el as HTMLElement).color);
+    const viewBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+
+    // "Edit" state: focus and change the title and body.
+    await titleField.click();
+    await page.keyboard.type(" edited");
+    await body.click();
+    await page.keyboard.type(" more text");
+    await expect(page.getByText(/saved.*last updated/i)).toBeVisible({ timeout: 10000 });
+
+    const [editTitleBg, editTitleColor] = await titleField.evaluate((el) => {
+      const cs = getComputedStyle(el as HTMLElement);
+      return [cs.backgroundColor, cs.color];
+    });
+    const editBodyColor = await body.evaluate((el) => getComputedStyle(el as HTMLElement).color);
+    const editBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+
+    expect(editTitleBg).toBe(viewTitleBg);
+    expect(editTitleColor).toBe(viewTitleColor);
+    expect(editBodyColor).toBe(viewBodyColor);
+    expect(editBg).toBe(viewBg);
+    expect(isGreyscale(editTitleColor)).toBe(true);
+    expect(isGreyscale(editBodyColor)).toBe(true);
+
+    await deleteOpenNote(page);
+  });
+});
+
+test.describe("[AC-036] the delete confirmation dialog is monochrome and legible", () => {
+  test("dialog background, heading, description and buttons are monochrome with sufficient contrast", async ({
+    page,
+  }) => {
+    await login(page);
+    await page.getByRole("button", { name: /new note/i }).click();
+    const title = `QA Delete Dialog ${Date.now()}`;
+    await page.getByLabel("Title").fill(title);
+    await page.locator(".ProseMirror").click();
+    await page.keyboard.type("About to be deleted");
+    await expect(page).toHaveURL(/\/note\?id=/, { timeout: 10000 });
+
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    const heading = page.locator("#delete-title");
+    const headingColor = await heading.evaluate((el) => getComputedStyle(el as HTMLElement).color);
+    expect(isGreyscale(headingColor)).toBe(true);
+
+    const description = page.locator("#delete-desc");
+    const descColor = await description.evaluate(
+      (el) => getComputedStyle(el as HTMLElement).color,
+    );
+    expect(isGreyscale(descColor)).toBe(true);
+
+    const dialogEffectiveBg = await effectiveBackgroundColor(page, dialog);
+    expect(isGreyscale(dialogEffectiveBg)).toBe(true);
+
+    const headingRatio = contrastRatio(headingColor, dialogEffectiveBg);
+    expect(headingRatio).toBeGreaterThanOrEqual(4.5);
+    const descRatio = contrastRatio(descColor, dialogEffectiveBg);
+    expect(descRatio).toBeGreaterThanOrEqual(4.5);
+
+    const cancelButton = page.getByRole("button", { name: "Cancel", exact: true });
+    const [cancelBg, cancelColor] = await cancelButton.evaluate((el) => {
+      const cs = getComputedStyle(el as HTMLElement);
+      return [cs.backgroundColor, cs.color];
+    });
+    expect(isGreyscale(cancelBg)).toBe(true);
+    expect(isGreyscale(cancelColor)).toBe(true);
+
+    const confirmButton = page.getByRole("button", { name: "Delete note" });
+    const [confirmBg, confirmColor] = await confirmButton.evaluate((el) => {
+      const cs = getComputedStyle(el as HTMLElement);
+      return [cs.backgroundColor, cs.color];
+    });
+    expect(isGreyscale(confirmBg)).toBe(true);
+    expect(isGreyscale(confirmColor)).toBe(true);
+    const confirmRatio = contrastRatio(confirmColor, confirmBg);
+    expect(confirmRatio).toBeGreaterThanOrEqual(3);
+
+    expectNoForbiddenColors(await allComputedColors(page));
+
+    await confirmButton.click();
+    await expect(page).toHaveURL(/\/notes$/);
+  });
 });

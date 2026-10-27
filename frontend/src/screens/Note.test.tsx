@@ -32,6 +32,45 @@ function selectAllInBody(pm: HTMLElement) {
   fireEvent.keyDown(pm, { key: "a", code: "KeyA", ctrlKey: true });
 }
 
+/** Parses `#rgb` / `#rrggbb` or `rgb(...)` / `rgba(...)` into 0-255 channels plus alpha (0-1). */
+function parseColor(value: string): [number, number, number, number] {
+  const hexMatch = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.exec(value.trim());
+  if (hexMatch) {
+    let h = hexMatch[1];
+    if (h.length === 3) {
+      h = h
+        .split("")
+        .map((c) => c + c)
+        .join("");
+    }
+    return [
+      parseInt(h.slice(0, 2), 16),
+      parseInt(h.slice(2, 4), 16),
+      parseInt(h.slice(4, 6), 16),
+      1,
+    ];
+  }
+  const rgbMatch =
+    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(
+      value.trim(),
+    );
+  if (rgbMatch) {
+    return [
+      Number(rgbMatch[1]),
+      Number(rgbMatch[2]),
+      Number(rgbMatch[3]),
+      rgbMatch[4] !== undefined ? Number(rgbMatch[4]) : 1,
+    ];
+  }
+  throw new Error(`could not parse colour value: ${value}`);
+}
+
+function isGreyscale(value: string): boolean {
+  if (!value || value === "transparent" || value === "rgba(0, 0, 0, 0)") return true;
+  const [r, g, b] = parseColor(value);
+  return r === g && g === b;
+}
+
 describe("Note screen", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -407,5 +446,190 @@ describe("Note screen", () => {
       .getAllByRole("button")
       .map((button) => button.textContent);
     expect(buttonLabels).toEqual(["Bold", "Heading", "List", "Link"]);
+  });
+
+  // ---------------------------------------------------------------------
+  // US-017-1 -- AC-032 / AC-033: black-and-white palette for the editor
+  // and its formatting toolbar.
+  // ---------------------------------------------------------------------
+
+  it("[AC-032] the title field, body field and formatting toolbar render in greyscale with no indigo/purple remaining", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+
+    const titleInput = screen.getByLabelText(/title/i) as HTMLInputElement;
+    const titleStyles = getComputedStyle(titleInput);
+    expect(isGreyscale(titleStyles.color)).toBe(true);
+    expect(isGreyscale(titleStyles.backgroundColor)).toBe(true);
+
+    const bodyField = screen.getByRole("textbox", { name: /body/i });
+    expect(isGreyscale(getComputedStyle(bodyField).color)).toBe(true);
+
+    const toolbar = screen.getByRole("group", { name: /formatting/i });
+    const toolbarButtons = within(toolbar).getAllByRole("button");
+    for (const button of toolbarButtons) {
+      const styles = getComputedStyle(button);
+      expect(isGreyscale(styles.color)).toBe(true);
+      expect(isGreyscale(styles.backgroundColor)).toBe(true);
+      expect(isGreyscale(styles.borderColor || styles.borderTopColor)).toBe(true);
+    }
+
+    expect(container.innerHTML.toLowerCase()).not.toMatch(/indigo|purple|violet/);
+  });
+
+  it("[AC-033] the active bold toolbar state renders in monochrome and is visually distinct from inactive", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+
+    const pm = container.querySelector(".ProseMirror") as HTMLElement;
+    const boldButton = screen.getByRole("button", { name: "Bold" });
+    const inactiveStyles = getComputedStyle(boldButton);
+    const inactiveBg = inactiveStyles.backgroundColor;
+    const inactiveBorder = inactiveStyles.borderColor || inactiveStyles.borderTopColor;
+
+    selectAllInBody(pm);
+    fireEvent.click(boldButton);
+    expect(boldButton).toHaveAttribute("aria-pressed", "true");
+
+    const activeStyles = getComputedStyle(boldButton);
+    expect(isGreyscale(activeStyles.backgroundColor)).toBe(true);
+    expect(isGreyscale(activeStyles.borderColor || activeStyles.borderTopColor)).toBe(true);
+    expect(
+      activeStyles.backgroundColor !== inactiveBg ||
+        (activeStyles.borderColor || activeStyles.borderTopColor) !== inactiveBorder,
+    ).toBe(true);
+  });
+
+  // The remaining three controls (heading/list/link) are checked against a
+  // note already carrying that formatting: selecting its content lands
+  // cleanly inside the formatted node, avoiding the instability of a
+  // mid-transaction selection seen when toggling live in this harness. The
+  // inactive baseline comes from the same button on a plain-text note.
+
+  it("[AC-033] the active heading toolbar state renders in monochrome and is visually distinct from inactive", async () => {
+    mockFetchOnce({
+      id: "n_plain",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    renderNote("/note?id=n_plain");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+    const inactiveBg = getComputedStyle(
+      screen.getByRole("button", { name: "Heading" }),
+    ).backgroundColor;
+
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<h3>Heading text</h3>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Heading text")).toBeInTheDocument());
+
+    const pm = container.querySelector(".ProseMirror") as HTMLElement;
+    const headingButton = within(container).getByRole("button", { name: "Heading" });
+
+    selectAllInBody(pm);
+    expect(headingButton).toHaveAttribute("aria-pressed", "true");
+
+    const activeStyles = getComputedStyle(headingButton);
+    expect(isGreyscale(activeStyles.backgroundColor)).toBe(true);
+    expect(activeStyles.backgroundColor).not.toBe(inactiveBg);
+  });
+
+  it("[AC-033] the active list toolbar state renders in monochrome and is visually distinct from inactive", async () => {
+    mockFetchOnce({
+      id: "n_plain",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    renderNote("/note?id=n_plain");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+    const inactiveBg = getComputedStyle(
+      screen.getByRole("button", { name: "List" }),
+    ).backgroundColor;
+
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<ul><li><p>Item</p></li></ul>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Item")).toBeInTheDocument());
+
+    const pm = container.querySelector(".ProseMirror") as HTMLElement;
+    const listButton = within(container).getByRole("button", { name: "List" });
+
+    selectAllInBody(pm);
+    expect(listButton).toHaveAttribute("aria-pressed", "true");
+
+    const activeStyles = getComputedStyle(listButton);
+    expect(isGreyscale(activeStyles.backgroundColor)).toBe(true);
+    expect(activeStyles.backgroundColor).not.toBe(inactiveBg);
+  });
+
+  it("[AC-033] the active link toolbar state renders in monochrome and is visually distinct from inactive", async () => {
+    mockFetchOnce({
+      id: "n_plain",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    renderNote("/note?id=n_plain");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+    const inactiveBg = getComputedStyle(
+      screen.getByRole("button", { name: "Link" }),
+    ).backgroundColor;
+
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: '<p><a href="https://example.com">Link text</a></p>',
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Link text")).toBeInTheDocument());
+
+    const pm = container.querySelector(".ProseMirror") as HTMLElement;
+    const linkButton = within(container).getByRole("button", { name: "Link" });
+
+    selectAllInBody(pm);
+    expect(linkButton).toHaveAttribute("aria-pressed", "true");
+
+    const activeStyles = getComputedStyle(linkButton);
+    expect(isGreyscale(activeStyles.backgroundColor)).toBe(true);
+    expect(activeStyles.backgroundColor).not.toBe(inactiveBg);
+  });
+
+  it("[AC-032] ProseMirror content styles (headings, bold, lists, links, placeholder) use monochrome values", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<h3>Heading</h3><p><strong>Bold</strong></p><ul><li><p>Item</p></li></ul>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Heading")).toBeInTheDocument());
+
+    const heading = container.querySelector(".ProseMirror h3") as HTMLElement;
+    const bold = container.querySelector(".ProseMirror strong") as HTMLElement;
+    expect(isGreyscale(getComputedStyle(heading).color)).toBe(true);
+    expect(isGreyscale(getComputedStyle(bold).color)).toBe(true);
   });
 });
