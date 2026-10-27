@@ -33,6 +33,8 @@ const toRGB = (hex: string): string => {
 };
 
 const N_RGB = toRGB(brand.neutralColor);
+const PRIMARY_RGB = toRGB(brand.primaryColor);
+const BG_RGB = toRGB(brand.backgroundColor);
 
 const T = {
   bg: brand.backgroundColor,
@@ -40,13 +42,15 @@ const T = {
   surfaceUp: `rgba(${N_RGB}, 0.09)`,
   hairline: `rgba(${N_RGB}, 0.18)`,
   hairlineSoft: `rgba(${N_RGB}, 0.1)`,
-  text: "rgba(255, 255, 255, 0.93)",
+  text: `rgba(${PRIMARY_RGB}, 0.93)`,
   muted: brand.neutralColor,
   faint: `rgba(${N_RGB}, 0.7)`,
   accent: brand.primaryColor,
-  accentSoft: `rgba(${toRGB(brand.primaryColor)}, 0.16)`,
+  accentSoft: `rgba(${PRIMARY_RGB}, 0.16)`,
   danger: brand.accentColor,
   dangerSoft: `rgba(${toRGB(brand.accentColor)}, 0.14)`,
+  hoverBg: `rgba(${N_RGB}, 0.08)`,
+  backdrop: `rgba(${BG_RGB}, 0.6)`,
   radius: brand.radius,
 };
 
@@ -246,7 +250,14 @@ export default function Screen() {
   return (
     <div
       className="min-h-full w-full px-4 py-8 sm:px-8 sm:py-12"
-      style={{ backgroundColor: T.bg, color: T.text, fontFamily: BODY }}
+      style={
+        {
+          backgroundColor: T.bg,
+          color: T.text,
+          fontFamily: BODY,
+          "--qd-hover": T.hoverBg,
+        } as React.CSSProperties
+      }
     >
       <style>{QD_CSS}</style>
 
@@ -518,7 +529,7 @@ export default function Screen() {
       {pending ? (
         <div
           className="qd-backdrop fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.6)" }}
+          style={{ backgroundColor: T.backdrop }}
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closeDialog();
           }}

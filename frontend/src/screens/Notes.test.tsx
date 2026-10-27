@@ -24,6 +24,44 @@ function mockFetchOnce(body: unknown, status = 200) {
   });
 }
 
+/** Parses `#rgb` / `#rrggbb` or `rgb(...)` / `rgba(...)` into 0-255 channels. */
+function parseColor(value: string): [number, number, number, number] {
+  const hexMatch = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.exec(value.trim());
+  if (hexMatch) {
+    let h = hexMatch[1];
+    if (h.length === 3) {
+      h = h
+        .split("")
+        .map((c) => c + c)
+        .join("");
+    }
+    return [
+      parseInt(h.slice(0, 2), 16),
+      parseInt(h.slice(2, 4), 16),
+      parseInt(h.slice(4, 6), 16),
+      1,
+    ];
+  }
+  const rgbMatch =
+    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(
+      value.trim(),
+    );
+  if (rgbMatch) {
+    return [
+      Number(rgbMatch[1]),
+      Number(rgbMatch[2]),
+      Number(rgbMatch[3]),
+      rgbMatch[4] !== undefined ? Number(rgbMatch[4]) : 1,
+    ];
+  }
+  throw new Error(`could not parse colour value: ${value}`);
+}
+
+function isGreyscale(value: string): boolean {
+  const [r, g, b] = parseColor(value);
+  return r === g && g === b;
+}
+
 describe("Notes screen", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -215,10 +253,7 @@ describe("Notes screen", () => {
         callsBefore + 1,
       ),
     );
-    expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("/notes?q=gro"),
-      expect.anything(),
-    );
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining("/notes?q=gro"), expect.anything());
     vi.useRealTimers();
   });
 
@@ -295,5 +330,74 @@ describe("Notes screen", () => {
       expect(screen.queryByText(/couldn.t search your notes/i)).not.toBeInTheDocument(),
     );
     expect(screen.getByText("Groceries")).toBeInTheDocument();
+  });
+
+  // ---------------------------------------------------------------------
+  // US-016-1 -- AC-030 / AC-031: black-and-white palette for the list,
+  // its highlights and the search box.
+  // ---------------------------------------------------------------------
+
+  it("[AC-030] the search box, row text and hover-highlight colour are all greyscale with no indigo/purple/violet present", async () => {
+    mockFetchOnce([
+      { id: "n_1", title: "Groceries", body: "<p>Milk</p>", updated_at: "2026-10-26T14:32:00" },
+    ]);
+    const { container } = renderNotes();
+    await waitFor(() => expect(screen.getByText("Groceries")).toBeInTheDocument());
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(isGreyscale(getComputedStyle(root).backgroundColor)).toBe(true);
+
+    const searchInput = screen.getByRole("searchbox");
+    const searchStyles = getComputedStyle(searchInput);
+    expect(isGreyscale(searchStyles.backgroundColor)).toBe(true);
+    expect(isGreyscale(searchStyles.color)).toBe(true);
+
+    const rowTitle = screen.getByText("Groceries");
+    expect(isGreyscale(getComputedStyle(rowTitle).color)).toBe(true);
+
+    // The row hover highlight is driven by the --qd-hover custom property on
+    // the screen root -- confirm it resolves to a real, greyscale colour
+    // rather than being left undefined (which would silently drop the
+    // highlight entirely).
+    const hoverVar = getComputedStyle(root).getPropertyValue("--qd-hover").trim();
+    expect(hoverVar.length).toBeGreaterThan(0);
+    expect(isGreyscale(hoverVar)).toBe(true);
+
+    expect(container.innerHTML.toLowerCase()).not.toMatch(/indigo|purple|violet/);
+  });
+
+  it("[AC-030] dividers and the clear-search control render in the monochrome palette", async () => {
+    mockFetchOnce([
+      { id: "n_1", title: "Groceries", body: "<p>Milk</p>", updated_at: "2026-10-26T14:32:00" },
+    ]);
+    renderNotes();
+    await waitFor(() => expect(screen.getByText("Groceries")).toBeInTheDocument());
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "g" } });
+    const clearInputButton = await screen.findByRole("button", { name: /clear search/i });
+    expect(isGreyscale(getComputedStyle(clearInputButton).color)).toBe(true);
+
+    const heading = screen.getByText("Newest first");
+    const divider = heading.closest("div") as HTMLElement;
+    expect(isGreyscale(getComputedStyle(divider).borderBottomColor)).toBe(true);
+  });
+
+  it("[AC-031] the no-results indication for a search term renders in greyscale text with a legible clear-search action", async () => {
+    mockFetchOnce([
+      { id: "n_1", title: "Groceries", body: "<p>Milk</p>", updated_at: "2026-10-26T14:32:00" },
+    ]);
+    renderNotes();
+    await waitFor(() => expect(screen.getByText("Groceries")).toBeInTheDocument());
+
+    mockFetchOnce([]);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "nonexistent" } });
+
+    const message = await screen.findByText(/no notes match/i);
+    expect(isGreyscale(getComputedStyle(message).color)).toBe(true);
+
+    const clearButtons = screen.getAllByRole("button", { name: /clear search/i });
+    const emptyStateClear = clearButtons[clearButtons.length - 1];
+    expect(isGreyscale(getComputedStyle(emptyStateClear).backgroundColor)).toBe(true);
+    expect(isGreyscale(getComputedStyle(emptyStateClear).color)).toBe(true);
   });
 });
