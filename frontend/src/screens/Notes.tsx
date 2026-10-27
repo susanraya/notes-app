@@ -17,6 +17,7 @@ export interface NoteOut {
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const SEARCH_DEBOUNCE_MS = 300;
 
 const toRGB = (hex: string): string => {
   const h = String(hex || "").replace("#", "");
@@ -88,6 +89,7 @@ export default function Screen() {
   const navigate = useNavigate();
   const [notes, setNotes] = React.useState<NoteOut[] | null>(null);
   const [loadError, setLoadError] = React.useState<string | null>(null);
+  const [searchError, setSearchError] = React.useState<string | null>(null);
   const [query, setQuery] = React.useState("");
   const [pending, setPending] = React.useState<NoteOut | null>(null);
   const [deleting, setDeleting] = React.useState(false);
@@ -99,21 +101,50 @@ export default function Screen() {
   const triggerRef = React.useRef<HTMLElement | null>(null);
   const timers = React.useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const loadNotes = React.useCallback(async () => {
-    setLoadError(null);
+  // Only the most recently issued request is allowed to update state: a
+  // response for a term the user has since changed away from is discarded.
+  const requestSeq = React.useRef(0);
+
+  const fetchNotes = React.useCallback(async (term: string) => {
+    const seq = ++requestSeq.current;
     try {
-      const data = await apiFetch<NoteOut[]>("/notes");
+      const path = term ? `/notes?q=${encodeURIComponent(term)}` : "/notes";
+      const data = await apiFetch<NoteOut[]>(path);
+      if (seq !== requestSeq.current) return; // a newer request has since started
       setNotes(data);
+      setLoadError(null);
+      setSearchError(null);
     } catch {
-      // A 401 is handled by apiFetch itself (clears the token and redirects to
-      // /login); any other failure gets its own retry affordance here.
-      setLoadError("Couldn’t load your notes just now. Try again in a moment.");
+      if (seq !== requestSeq.current) return;
+      // A failed request never blanks whatever list is already on screen.
+      if (term) {
+        setSearchError("Couldn’t search your notes just now. Try again.");
+      } else {
+        setLoadError("Couldn’t load your notes just now. Try again in a moment.");
+      }
     }
   }, []);
 
+  // Initial, unfiltered load.
   React.useEffect(() => {
-    loadNotes();
-  }, [loadNotes]);
+    fetchNotes("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounced server-side search as the query changes. Skips the very first
+  // render so it doesn't duplicate the initial load above.
+  const didMount = React.useRef(false);
+  React.useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true;
+      return undefined;
+    }
+    const term = query.trim();
+    const timer = setTimeout(() => {
+      fetchNotes(term);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [query, fetchNotes]);
 
   React.useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
@@ -136,13 +167,9 @@ export default function Screen() {
     [notes],
   );
 
-  const term = query.trim().toLowerCase();
-  const filtered = React.useMemo(() => {
-    if (!term) return sorted;
-    return sorted.filter(
-      (n) => n.title.toLowerCase().includes(term) || n.body.toLowerCase().includes(term),
-    );
-  }, [sorted, term]);
+  const searching = query.trim().length > 0;
+
+  const clearSearch = () => setQuery("");
 
   const closeDialog = () => {
     setPending(null);
@@ -284,7 +311,7 @@ export default function Screen() {
               <button
                 type="button"
                 aria-label="Clear search"
-                onClick={() => setQuery("")}
+                onClick={clearSearch}
                 className="qd-focus absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center transition-colors"
                 style={{ color: T.muted, borderRadius: T.radius }}
               >
@@ -293,6 +320,36 @@ export default function Screen() {
             ) : null}
           </div>
         </form>
+
+        {searchError ? (
+          <div
+            role="alert"
+            className="mt-4 flex items-center justify-between gap-3 px-4 py-3 text-[14px]"
+            style={{
+              color: T.text,
+              backgroundColor: T.dangerSoft,
+              border: `1px solid ${T.danger}`,
+              borderRadius: T.radius,
+            }}
+          >
+            <span className="flex items-start gap-2">
+              <AlertCircle
+                className="mt-0.5 h-4 w-4 shrink-0"
+                style={{ color: T.danger }}
+                aria-hidden="true"
+              />
+              {searchError}
+            </span>
+            <button
+              type="button"
+              onClick={() => fetchNotes(query.trim())}
+              className="qd-focus shrink-0 px-3 py-1.5 text-[13px] font-semibold"
+              style={quietBtn}
+            >
+              Try again
+            </button>
+          </div>
+        ) : null}
 
         <section className="mt-10" aria-labelledby="notes-list-heading">
           <div
@@ -309,10 +366,10 @@ export default function Screen() {
             <p className="text-[13px]" style={{ ...NUM, color: T.faint }} aria-live="polite">
               {notes === null
                 ? "Loading…"
-                : total === 0
-                  ? "Nothing saved yet"
-                  : term
-                    ? `${filtered.length} of ${total} notes match “${query.trim()}”`
+                : searching
+                  ? `${total} notes match “${query.trim()}”`
+                  : total === 0
+                    ? "Nothing saved yet"
                     : `${total} notes, newest change first`}
             </p>
           </div>
@@ -330,7 +387,7 @@ export default function Screen() {
                   <Button
                     onClick={() => {
                       setNotes(null);
-                      loadNotes();
+                      fetchNotes("");
                     }}
                     className="qd-focus inline-flex min-h-[44px] items-center justify-center gap-2 px-5 text-[15px] font-semibold"
                     style={primaryBtn}
@@ -340,7 +397,7 @@ export default function Screen() {
                 }
               />
             </div>
-          ) : total === 0 ? (
+          ) : total === 0 && !searching ? (
             <div className="py-10">
               <Empty
                 title="Nothing written here yet"
@@ -357,14 +414,31 @@ export default function Screen() {
                 }
               />
             </div>
-          ) : filtered.length === 0 ? null : (
+          ) : total === 0 && searching ? (
+            <div className="qd-row py-12">
+              <Empty
+                title={`No notes match “${query.trim()}”`}
+                description="Clear the search to see all notes. Search looks at both the title and the text of every note."
+                action={
+                  <Button
+                    onClick={clearSearch}
+                    className="qd-focus inline-flex min-h-[44px] items-center justify-center gap-2 px-5 text-[15px] font-semibold"
+                    style={primaryBtn}
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                    Clear search
+                  </Button>
+                }
+              />
+            </div>
+          ) : (
             <ul className="relative m-0 list-none p-0">
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute top-0 bottom-0 w-px"
                 style={{ left: "62px", backgroundColor: T.accentSoft }}
               />
-              {filtered.map((note) => {
+              {sorted.map((note) => {
                 const d = new Date(note.updated_at);
                 const preview = stripHtml(note.body);
                 return (
@@ -439,25 +513,6 @@ export default function Screen() {
             </ul>
           )}
         </section>
-
-        {total > 0 && filtered.length === 0 ? (
-          <div className="qd-row py-12">
-            <Empty
-              title={`No notes match “${query.trim()}”`}
-              description="Clear the search to see all notes. Search looks at both the title and the text of every note."
-              action={
-                <Button
-                  onClick={() => setQuery("")}
-                  className="qd-focus inline-flex min-h-[44px] items-center justify-center gap-2 px-5 text-[15px] font-semibold"
-                  style={primaryBtn}
-                >
-                  <X className="h-4 w-4" aria-hidden="true" />
-                  Clear search
-                </Button>
-              }
-            />
-          </div>
-        ) : null}
       </div>
 
       {pending ? (

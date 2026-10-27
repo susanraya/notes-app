@@ -8,7 +8,7 @@ reaches a handler body.
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -30,10 +30,11 @@ def _parse_note_id(note_id: str) -> uuid.UUID:
 
 @router.get("", response_model=list[NoteOut])
 async def list_notes(
+    q: str | None = Query(default=None),
     owner: str = Depends(get_current_owner),  # noqa: B008
     db: Session = Depends(get_db),  # noqa: B008
 ) -> list[NoteOut]:
-    notes = notes_service.list_notes(db, owner)
+    notes = notes_service.list_notes(db, owner, q)
     return [NoteOut.model_validate(note) for note in notes]
 
 
