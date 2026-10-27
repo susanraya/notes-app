@@ -7,81 +7,90 @@
 
 ### ARCH-001 · approved · source: architecture:summary
 
-Overall architecture approved, version 1: a lightweight single-user notes app on React 19 + FastAPI 0.115 + PostgreSQL 16, deployed on AWS.
+Approved architecture (v1) for a single-user notes app: React 19 SPA, FastAPI 0.115 backend, PostgreSQL 16 database on AWS, now restyled to a global monochrome (black/white/greyscale) theme.
 
-The approved architecture is a single-user notes application. Frontend: React 19 responsive SPA with a rich-text editor. Backend: FastAPI 0.115 exposing authentication and note CRUD/search endpoints. Database: PostgreSQL 16 storing notes and providing full-text search over title and body. One provisioned account logs in with email and password; every note screen requires a valid session. Deployment target is AWS: static frontend hosting via S3 + CloudFront, a containerised backend, and managed PostgreSQL (RDS) for automatic backups. Explicitly out of scope: sign-up, multi-user support, attachments, external sync.
+Status: approved, version 1. The architecture establishes a lightweight single-user notes application: a React 19 responsive SPA with a rich-text editor, a FastAPI 0.115 backend exposing authentication and note CRUD/search endpoints, and a PostgreSQL 16 database with full-text search over title and body. One provisioned account logs in with email/password; every note screen requires a valid session. Deployment is on AWS: static frontend hosting (S3 + CloudFront), a containerised backend, and managed PostgreSQL (RDS) for automatic backups. This revision adds a global black-and-white monochrome theme: shared design tokens move from indigo/purple to black/white/greyscale, applied to login, notes list and search, the note editor and formatting toolbar, note view/edit, and the delete confirmation screen, with contrast verified at desktop and mobile widths. These are presentation-only changes within the existing React frontend; backend, data model, API surface, deployment and runtime needs are unchanged. Explicitly out of scope: sign-up, multi-user, attachments, external sync.
 
-- ⚠ Requirement keys US-001 through US-013 were provided without descriptions, so this architecture cannot be traced to specific requirements -- traceability matrix cannot be completed until requirement content is supplied.
+**Related:** US-015, US-016, US-017, US-018
+
+- ⚠ Input explicitly ties the monochrome restyle to US-015, US-016, US-017, US-018 only; requirement keys US-001-US-014, US-019, US-020 are not mapped to any specific architecture element in this input -- confirm whether they apply to this phase or were covered elsewhere.
+- ⚠ No delete confirmation screen details given beyond 'restyled to monochrome' -- no critical path or endpoint narrative describes its UX flow.
 
 ### ARCH-002 · approved · source: architecture:components:frontend
 
-Frontend component: Notes Web App, a React 19 responsive SPA.
+Frontend component: Notes Web App built in React 19 as a responsive single-page application.
 
-Notes Web App (React 19) serves login, notes list, rich-text editor, view, and search screens. It redirects unauthenticated users to login, filters the notes list as the user types, and triggers auto-save of edits.
+Serves login, notes list, rich-text editor, view and search screens. Redirects unauthenticated users to login. Filters the notes list as the user types (type-ahead search). Triggers auto-save of edits. Applies a global black-and-white monochrome theme from shared design tokens across every screen, with contrast verified at desktop and mobile widths.
+
+**Related:** US-015, US-016, US-017, US-018
 
 ### ARCH-003 · approved · source: architecture:components:backend
 
-Backend component: Notes API, a FastAPI 0.115 service.
+Backend component: Notes API built with FastAPI 0.115.
 
-Notes API (FastAPI 0.115) authenticates the single user, issues and validates session tokens, and serves create/read/update/delete and full-text search of notes. It validates request bodies and enforces that every note endpoint requires a valid login.
+Authenticates the single user, issues and validates session tokens, and serves create/read/update/delete and full-text search of notes. Validates request bodies and enforces that every note endpoint requires a valid login.
+
+- ⚠ No requirement key is explicitly linked to this component in the input.
 
 ### ARCH-004 · approved · source: architecture:components:database
 
 Database component: Notes Database on PostgreSQL 16.
 
-Notes Database (PostgreSQL 16) stores the single user's credentials and notes (title, rich-text body, timestamps), orders notes newest-first by last-updated, and provides built-in full-text search over title and body.
+Stores the single user's credentials and notes (title, rich-text body, timestamps). Orders notes newest-first by last-updated. Provides built-in full-text search over title and body.
 
-### ARCH-005 · approved · source: architecture:critical_paths:login
+- ⚠ No requirement key is explicitly linked to this component in the input.
 
-Critical path: login and session establishment for the single provisioned owner account.
+### ARCH-005 · approved · source: architecture:critical_paths:login_and_session_establishment
 
-The owner submits email and password. The backend verifies the password hash against the single provisioned account and returns a JWT on success, or an error that keeps the user on the login page. No self-service sign-up exists.
+Critical path for login and session establishment using the single provisioned account.
 
-- ⚠ No detail provided on session/token expiry, refresh, or logout invalidation beyond client-side token discard.
+The owner submits email and password. The backend verifies the password hash against the single provisioned account and returns a JWT on success, or an error that keeps the user on the login page. No self-service sign-up exists. The login page and its error message render using the shared monochrome theme.
 
-### ARCH-006 · approved · source: architecture:critical_paths:create_autosave
+**Related:** US-015
 
-Critical path: creating a note and auto-saving edits.
+### ARCH-006 · approved · source: architecture:critical_paths:create_or_autosave_a_note
 
-An authenticated edit is persisted: a new note is created with POST, subsequent auto-saves use PUT. The backend sets the last-updated timestamp on each save, which drives newest-first ordering in the notes list.
+Critical path for creating a note and auto-saving edits.
 
-- ⚠ Auto-save trigger conditions (e.g. debounce interval, save-on-blur) are not specified in the architecture input.
+An authenticated edit is persisted: a new note is created with POST, subsequent auto-saves use PUT. The backend sets the last-updated timestamp on each save, which drives newest-first ordering. The editor, formatting toolbar and view/edit screens render in the monochrome theme.
 
-### ARCH-007 · approved · source: architecture:critical_paths:list_search
+**Related:** US-017, US-018
 
-Critical path: listing notes newest-first and full-text searching them.
+### ARCH-007 · approved · source: architecture:critical_paths:list_and_search_notes
 
-The list is loaded newest-first. As the user types, the frontend queries search, and the backend runs a full-text match over title and body, returning matching notes or an empty set.
+Critical path for listing notes newest-first and searching them.
+
+The list is loaded newest-first. As the user types, the frontend queries search, and the backend runs a full-text match over title and body, returning matching notes or an empty set. The list rows, highlights, search box and empty-result indication render in the monochrome theme.
+
+**Related:** US-016
 
 ### ARCH-008 · approved · source: architecture:entities
 
-Data model: users and notes tables in PostgreSQL 16.
+Data model: two entities, users and notes.
 
-users: id, email, password_hash, created_at. notes: id, user_id, title, body, search_vector, created_at, updated_at. The search_vector column backs the full-text search over title and body; updated_at drives newest-first ordering.
+users: id, email, password_hash, created_at. notes: id, user_id, title, body, search_vector, created_at, updated_at. The search_vector field backs PostgreSQL full-text search over title and body; updated_at drives newest-first list ordering.
 
-- ⚠ No explicit constraints (e.g. uniqueness on email, foreign key cascade behavior on user_id) are stated.
+- ⚠ No requirement keys explicitly linked to the data model in the input.
 
 ### ARCH-009 · approved · source: architecture:endpoints
 
-API surface: authentication and note CRUD/search endpoints exposed by the Notes API.
+API surface: authentication and note CRUD/search endpoints.
 
-POST /auth/login -- authenticate the single owner with email and password; returns a session token or 401. POST /auth/logout -- ends the current session client-side; token is discarded, stateless confirmation. GET /notes -- list notes newest-first by last-updated; optional q filters by full-text match over title and body. POST /notes -- create a new note with a title and rich-text body. GET /notes/{id} -- retrieve one note with its title and formatted body. PUT /notes/{id} -- update a note's title and/or body (used by auto-save); sets updated_at to now. DELETE /notes/{id} -- permanently delete a note; it leaves the list and search results and cannot be recovered.
+POST /auth/login - authenticate the single owner with email and password; returns a session token or 401. POST /auth/logout - end the current session client-side; token is discarded, stateless confirmation. GET /notes - list notes newest-first by last-updated; optional q filters by full-text match over title and body. POST /notes - create a new note with a title and rich-text body. GET /notes/{id} - retrieve one note with its title and formatted body. PUT /notes/{id} - update a note's title and/or body (used by auto-save); sets updated_at to now. DELETE /notes/{id} - permanently delete a note; it leaves the list and search results and cannot be recovered.
 
-- ⚠ No explicit error-handling spec (e.g. responses for not-found, validation failures) beyond the 401 on login.
+**Related:** US-015, US-016, US-017, US-018
 
 ### ARCH-010 · approved · source: architecture:deployment_nodes
 
 Deployment topology on AWS: static frontend hosting, containerised backend, managed database.
 
-Frontend Hosting: AWS S3 + CloudFront serving the static React 19 build. Backend Service: AWS App Runner running the Python/FastAPI 0.115 container. Database: AWS RDS for PostgreSQL 16.
-
-- ⚠ No networking/security details (VPC, security groups, TLS termination) provided.
+Frontend Hosting: AWS S3 + CloudFront serving the static React 19 build. Backend Service: AWS App Runner running the containerised Python/FastAPI 0.115 app. Database: AWS RDS for PostgreSQL 16, providing automatic backups.
 
 ### ARCH-011 · approved · source: architecture:technology_decisions
 
-Technology choices and rationale for frontend, backend, database, and cloud.
+Technology stack decisions and rationale for frontend, backend, database, and cloud.
 
-Frontend: React 19 (alternatives considered: Vue, Svelte) -- chosen to deliver a responsive SPA with rich-text editing and type-ahead search from a single codebase; mature React rich-text editors (TipTap) plug in directly. Backend: FastAPI 0.115 (alternatives: Flask, Django) -- a lean Python framework whose automatic request validation keeps login/note-saving endpoints safe with little code, matching the app's small surface. Database: PostgreSQL 16 (alternatives: SQLite, MySQL) -- stores structured notes reliably, orders them newest-first by timestamp, and provides built-in full-text search so no separate search product is needed. Cloud: AWS (alternatives: Google Cloud, Azure) -- hosts the static frontend on S3/CloudFront and the backend as a container, runs managed PostgreSQL (RDS) with automatic backups, at a low-cost, scale-down footprint.
+Frontend: React 19 (alternatives considered: Vue, Svelte) -- delivers a responsive SPA with rich-text editor and type-ahead search from a single codebase; mature React rich-text editors (TipTap) plug in directly; the monochrome restyle is a single-source change via shared CSS/theme tokens. Backend: FastAPI 0.115 (alternatives: Flask, Django) -- lean Python framework with automatic request validation, keeping login and note-saving endpoints safe with little code for this small, well-defined surface. Database: PostgreSQL 16 (alternatives: SQLite, MySQL) -- stores structured notes reliably, orders by timestamp, and provides built-in full-text search so no separate search product is needed. Cloud: AWS (alternatives: Google Cloud, Azure) -- makes the app reachable from any browser, hosts static frontend on S3/CloudFront and backend as a container, runs managed PostgreSQL (RDS) with automatic backups at a low-cost, scale-down footprint.
 <!-- sdlc:auto:end narrative -->
 
 <!-- sdlc:auto:start building-blocks -->
@@ -89,7 +98,7 @@ Frontend: React 19 (alternatives considered: Vue, Svelte) -- chosen to deliver a
 
 | ID | Name | Technology | Responsibility | Depends on |
 |---|---|---|---|---|
-| frontend | Notes Web App | React 19 | Responsive SPA serving login, notes list, rich-text editor, view and search. Redirects unauthenticated users to login, filters list as the user types, and triggers auto-save of edits. | backend |
+| frontend | Notes Web App | React 19 | Responsive SPA serving login, notes list, rich-text editor, view and search. Redirects unauthenticated users to login, filters list as the user types, and triggers auto-save of edits. Applies a global black-and-white (monochrome) theme from shared design tokens across every screen, with contrast verified at desktop and mobile widths. | backend |
 | backend | Notes API | FastAPI 0.115 | Authenticates the single user, issues and validates session tokens, and serves create/read/update/delete and full-text search of notes. Validates request bodies and enforces that every note endpoint requires a valid login. | database |
 | database | Notes Database | PostgreSQL 16 | Stores the single user's credentials and notes (title, rich-text body, timestamps), orders notes newest-first by last-updated, and provides built-in full-text search over title and body. | — |
 
@@ -108,7 +117,7 @@ graph TD
 
 ### Login and session establishment
 
-The owner submits email and password. The backend verifies the password hash against the single provisioned account and returns a JWT on success, or an error that keeps the user on the login page. No self-service sign-up exists.
+The owner submits email and password. The backend verifies the password hash against the single provisioned account and returns a JWT on success, or an error that keeps the user on the login page. No self-service sign-up exists. The login page and its error message render using the shared monochrome theme (US-015).
 
 - **Components:** frontend, backend, database
 - **Modules:** auth.router, auth.service, auth.security, users.repository
@@ -128,7 +137,7 @@ sequenceDiagram
 
 ### Create or auto-save a note
 
-An authenticated edit is persisted. A new note is created with POST, subsequent auto-saves use PUT. The backend sets the last-updated timestamp on each save, which drives newest-first ordering.
+An authenticated edit is persisted. A new note is created with POST, subsequent auto-saves use PUT. The backend sets the last-updated timestamp on each save, which drives newest-first ordering. The editor, formatting toolbar and view/edit screens render in the monochrome theme (US-017, US-018).
 
 - **Components:** frontend, backend, database
 - **Modules:** notes.router, notes.service, notes.repository, auth.dependencies
@@ -148,7 +157,7 @@ sequenceDiagram
 
 ### List and search notes
 
-The list is loaded newest-first. As the user types, the frontend queries search, and the backend runs a full-text match over title and body, returning matching notes or an empty set.
+The list is loaded newest-first. As the user types, the frontend queries search, and the backend runs a full-text match over title and body, returning matching notes or an empty set. The list rows, highlights, search box and empty-result indication render in the monochrome theme (US-016).
 
 - **Components:** frontend, backend, database
 - **Modules:** notes.router, notes.service, notes.repository

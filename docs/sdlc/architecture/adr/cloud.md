@@ -2,7 +2,7 @@
 # ADR-0004: Use AWS for Cloud
 
 Status: Accepted  
-Date: 2026-10-26
+Date: 2026-10-27
 
 ## Context and Problem Statement
 

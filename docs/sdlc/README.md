@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 a simple notes app
 
-**Documentation version:** v7
+**Documentation version:** v8
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -31,7 +31,7 @@ a simple notes app
 | [Runbook](deployment/runbook.md) | not deployed yet |
 | [Release notes](deployment/release-notes.md) | 0 releases |
 | [Traceability matrix](traceability-matrix.md) | 20 requirements |
-| [Changelog](CHANGELOG.md) | 7 versions |
+| [Changelog](CHANGELOG.md) | 8 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -48,12 +48,10 @@ a simple notes app
 
 ### Architecture
 
-- Requirement keys US-001 through US-013 were provided without descriptions, so this architecture cannot be traced to specific requirements -- traceability matrix cannot be completed until requirement content is supplied.
-- No detail provided on session/token expiry, refresh, or logout invalidation beyond client-side token discard.
-- Auto-save trigger conditions (e.g. debounce interval, save-on-blur) are not specified in the architecture input.
-- No explicit constraints (e.g. uniqueness on email, foreign key cascade behavior on user_id) are stated.
-- No explicit error-handling spec (e.g. responses for not-found, validation failures) beyond the 401 on login.
-- No networking/security details (VPC, security groups, TLS termination) provided.
+- Input explicitly ties the monochrome restyle to US-015, US-016, US-017, US-018 only; requirement keys US-001-US-014, US-019, US-020 are not mapped to any specific architecture element in this input -- confirm whether they apply to this phase or were covered elsewhere.
+- No delete confirmation screen details given beyond 'restyled to monochrome' -- no critical path or endpoint narrative describes its UX flow.
+- No requirement key is explicitly linked to this component in the input.
+- No requirement keys explicitly linked to the data model in the input.
 
 ### Development
 
