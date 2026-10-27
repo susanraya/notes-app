@@ -31,10 +31,17 @@ function parseColor(value: string): [number, number, number, number] {
         .map((c) => c + c)
         .join("");
     }
-    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16), 1];
+    return [
+      parseInt(h.slice(0, 2), 16),
+      parseInt(h.slice(2, 4), 16),
+      parseInt(h.slice(4, 6), 16),
+      1,
+    ];
   }
   const rgbMatch =
-    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(value.trim());
+    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(
+      value.trim(),
+    );
   if (rgbMatch) {
     return [
       Number(rgbMatch[1]),
@@ -221,5 +228,41 @@ describe("Login screen", () => {
 
     const emailError = screen.getByText(/enter the email this desk was set up with/i);
     expect(isGreyscale(getComputedStyle(emailError).color)).toBe(true);
+  });
+
+  // ---------------------------------------------------------------------
+  // US-011-1 -- AC-022 / AC-023: responsive layout for desktop and mobile.
+  // ---------------------------------------------------------------------
+
+  it("[AC-022] the page root has a sensible max content width and never forces a fixed width wider than the viewport", () => {
+    const { container } = renderLogin();
+
+    const root = container.firstElementChild as HTMLElement;
+    // Full-bleed background, but the content column underneath is capped so
+    // it stays readable at 1280px instead of stretching edge to edge.
+    expect(root.className).toContain("w-full");
+    const contentColumn = root.querySelector("div.mx-auto") as HTMLElement;
+    expect(contentColumn).not.toBeNull();
+    expect(contentColumn.className).toContain("max-w-[1120px]");
+    expect(contentColumn.className).toContain("w-full");
+    // Horizontal padding on the content column keeps edges off the viewport
+    // bounds at narrow widths instead of running flush to the edge.
+    expect(contentColumn.className).toMatch(/px-5/);
+  });
+
+  it("[AC-023] the two-column layout only applies from the lg breakpoint, so it reflows to one column below it", () => {
+    const { container } = renderLogin();
+    const grid = container.querySelector(".lg\\:grid-cols-\\[1fr_minmax\\(0\\,460px\\)\\]");
+    expect(grid).not.toBeNull();
+    // No un-prefixed grid-cols class forces two columns below `lg`.
+    expect(grid?.className).not.toMatch(/(?<!lg:)grid-cols-2/);
+  });
+
+  it("[AC-023] the Log in button meets the 44px minimum touch target at every width", () => {
+    renderLogin();
+    const submitButton = screen.getByRole("button", { name: /log in/i });
+    // h-12 (48px) applies unconditionally -- not gated behind a breakpoint --
+    // so the control is reachable the same way at 375px as at 1280px.
+    expect(submitButton.className).toMatch(/(^|\s)h-12(\s|$)/);
   });
 });

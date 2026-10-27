@@ -400,4 +400,66 @@ describe("Notes screen", () => {
     expect(isGreyscale(getComputedStyle(emptyStateClear).backgroundColor)).toBe(true);
     expect(isGreyscale(getComputedStyle(emptyStateClear).color)).toBe(true);
   });
+
+  // ---------------------------------------------------------------------
+  // US-011-1 -- AC-022 / AC-023: responsive layout for desktop and mobile.
+  // ---------------------------------------------------------------------
+
+  it("[AC-022] the list column has a sensible max content width that keeps it readable at 1280px", async () => {
+    mockFetchOnce([
+      { id: "n_1", title: "Groceries", body: "<p>Milk</p>", updated_at: "2026-10-26T14:32:00" },
+    ]);
+    const { container } = renderNotes();
+    await waitFor(() => expect(screen.getByText("Groceries")).toBeInTheDocument());
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain("w-full");
+    const contentColumn = root.querySelector("div.mx-auto") as HTMLElement;
+    expect(contentColumn).not.toBeNull();
+    expect(contentColumn.className).toContain("max-w-3xl");
+    expect(contentColumn.className).toContain("w-full");
+  });
+
+  it("[AC-023] New note, search and clear-search controls each meet the 44px minimum touch target", async () => {
+    mockFetchOnce([
+      { id: "n_1", title: "Groceries", body: "<p>Milk</p>", updated_at: "2026-10-26T14:32:00" },
+    ]);
+    renderNotes();
+    await waitFor(() => expect(screen.getByText("Groceries")).toBeInTheDocument());
+
+    const newNoteButton = screen.getByRole("button", { name: /new note/i });
+    expect(newNoteButton.className).toMatch(/min-h-\[44px\]/);
+
+    const searchInput = screen.getByRole("searchbox");
+    expect(searchInput.className).toMatch(/(^|\s)h-12(\s|$)/);
+
+    fireEvent.change(searchInput, { target: { value: "g" } });
+    const clearButton = await screen.findByRole("button", { name: /clear search/i });
+    expect(clearButton.className).toMatch(/(^|\s)h-11(\s|$)/);
+    expect(clearButton.className).toMatch(/(^|\s)w-11(\s|$)/);
+  });
+
+  it("[AC-023] the per-row delete control meets the 44px minimum touch target", async () => {
+    mockFetchOnce([
+      { id: "n_1", title: "Groceries", body: "<p>Milk</p>", updated_at: "2026-10-26T14:32:00" },
+    ]);
+    renderNotes();
+    await waitFor(() => expect(screen.getByText("Groceries")).toBeInTheDocument());
+
+    const deleteButton = screen.getByRole("button", { name: /delete “groceries”/i });
+    expect(deleteButton.className).toMatch(/(^|\s)h-11(\s|$)/);
+    expect(deleteButton.className).toMatch(/(^|\s)w-11(\s|$)/);
+  });
+
+  it("[AC-022] the top controls reflow to a single column below the sm breakpoint", async () => {
+    mockFetchOnce([
+      { id: "n_1", title: "Groceries", body: "<p>Milk</p>", updated_at: "2026-10-26T14:32:00" },
+    ]);
+    const { container } = renderNotes();
+    await waitFor(() => expect(screen.getByText("Groceries")).toBeInTheDocument());
+
+    const headerGrid = container.querySelector(".sm\\:grid-cols-12") as HTMLElement;
+    expect(headerGrid).not.toBeNull();
+    expect(headerGrid.className).toContain("grid-cols-1");
+  });
 });

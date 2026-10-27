@@ -340,6 +340,7 @@ export default function Screen() {
   const css = `
     .qd-ring:focus-visible { outline: 2px solid ${primary}; outline-offset: 2px; }
     .ProseMirror:focus { outline: none; }
+    .ProseMirror { overflow-wrap: anywhere; word-break: break-word; }
     .ProseMirror h3 { font-family: ${headingFont}; font-weight: 600; font-size: 1.125rem; line-height: 1.4; color: ${inkStrong}; margin: 24px 0 8px; }
     .ProseMirror h3:first-child { margin-top: 0; }
     .ProseMirror p { margin: 0 0 16px; }
@@ -363,7 +364,7 @@ export default function Screen() {
 
   return (
     <div
-      className="min-h-full w-full"
+      className="min-h-full w-full overflow-x-hidden"
       style={{ backgroundColor: brand.backgroundColor, color: ink, fontFamily: bodyFont }}
     >
       <style>{css}</style>
@@ -388,10 +389,10 @@ export default function Screen() {
             </Button>
           </div>
 
-          <div className="col-span-12 sm:col-span-6 sm:flex sm:justify-center">
+          <div className="col-span-12 min-w-0 sm:col-span-6 sm:flex sm:justify-center">
             {status === "loading" ? (
               <p
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-[13px]"
+                className="inline-flex max-w-full items-center gap-2 whitespace-normal break-words px-3 py-1.5 text-[13px]"
                 style={{
                   borderRadius: "999px",
                   border: `1px solid ${hair}`,
@@ -404,7 +405,7 @@ export default function Screen() {
             ) : (
               <p
                 aria-live="polite"
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-[13px]"
+                className="inline-flex max-w-full items-start gap-2 whitespace-normal break-words px-3 py-1.5 text-[13px]"
                 style={{
                   borderRadius: "999px",
                   border: `1px solid ${hair}`,
@@ -415,11 +416,11 @@ export default function Screen() {
               >
                 <span
                   aria-hidden="true"
-                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full"
                   style={{ backgroundColor: st.dot }}
                 />
-                <st.Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                {st.text}
+                <st.Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span className="min-w-0 break-words">{st.text}</span>
               </p>
             )}
           </div>
@@ -449,7 +450,7 @@ export default function Screen() {
         {loadError ? (
           <p
             role="alert"
-            className="mt-6 flex items-start gap-2 px-4 py-3 text-[14px]"
+            className="mt-6 flex items-start gap-2 break-words px-4 py-3 text-[14px]"
             style={{
               color: accentText,
               backgroundColor: alpha(brand.accentColor, 0.12),
@@ -493,7 +494,7 @@ export default function Screen() {
                 scheduleSave();
               }}
               placeholder="Name this note"
-              className="qd-input qd-ring mt-2 w-full px-0 text-[26px] leading-tight sm:text-[30px]"
+              className="qd-input qd-ring mt-2 w-full px-0 text-[22px] leading-tight sm:text-[30px]"
               style={{
                 fontFamily: headingFont,
                 fontWeight: 600,
@@ -503,6 +504,7 @@ export default function Screen() {
                 borderBottom: `1px solid ${hairSoft}`,
                 borderRadius: 0,
                 height: "auto",
+                minHeight: "44px",
                 paddingBottom: "12px",
               }}
             />
@@ -515,7 +517,7 @@ export default function Screen() {
               style={{ backgroundColor: alpha(primary, 0.32) }}
             />
 
-            <div className="sm:pl-8">
+            <div className="min-w-0 sm:pl-8">
               <div
                 role="group"
                 aria-label="Formatting"
@@ -538,7 +540,11 @@ export default function Screen() {
 
               <p
                 aria-live="polite"
-                className={linkHint ? "mt-3 flex items-start gap-2 text-[13px]" : "sr-only"}
+                className={
+                  linkHint
+                    ? "mt-3 flex items-start gap-2 break-words text-[13px]"
+                    : "sr-only"
+                }
                 style={linkHint ? { color: accentText } : undefined}
               >
                 {linkHint && (
@@ -561,8 +567,14 @@ export default function Screen() {
                   Body
                 </span>
                 <div
-                  className="mt-3 text-[17px] leading-[1.65]"
-                  style={{ color: ink, minHeight: "340px", maxWidth: "68ch", fontFamily: bodyFont }}
+                  className="mt-3 min-w-0 text-[17px] leading-[1.65]"
+                  style={{
+                    color: ink,
+                    minHeight: "340px",
+                    maxWidth: "68ch",
+                    width: "100%",
+                    fontFamily: bodyFont,
+                  }}
                   aria-labelledby="body-label"
                   role="textbox"
                   aria-multiline="true"
@@ -578,7 +590,7 @@ export default function Screen() {
           </div>
 
           <div className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-10">
-            <p className="text-[13px]" style={{ color: muted }}>
+            <p className="break-words text-[13px]" style={{ color: muted }}>
               Changes save automatically as you type. No attachments and no version history — once a
               note is deleted it is gone.
             </p>
@@ -622,12 +634,16 @@ export default function Screen() {
           >
             <h2
               id="delete-title"
-              className="text-[20px] leading-snug"
+              className="break-words text-[20px] leading-snug"
               style={{ fontFamily: headingFont, fontWeight: 600, color: DIALOG.title }}
             >
               Delete “{title.trim() || "Untitled note"}”?
             </h2>
-            <p id="delete-desc" className="mt-3 text-[15px] leading-[1.6]" style={{ color: DIALOG.desc }}>
+            <p
+              id="delete-desc"
+              className="mt-3 break-words text-[15px] leading-[1.6]"
+              style={{ color: DIALOG.desc }}
+            >
               It is removed permanently and cannot be recovered. This app keeps no version history
               and no trash.
             </p>
@@ -635,7 +651,7 @@ export default function Screen() {
             {dialogError ? (
               <p
                 role="alert"
-                className="mt-4 flex items-start gap-2 p-3 text-[14px] leading-relaxed"
+                className="mt-4 flex items-start gap-2 break-words p-3 text-[14px] leading-relaxed"
                 style={{
                   color: DIALOG.errorText,
                   backgroundColor: DIALOG.errorBg,
@@ -652,7 +668,7 @@ export default function Screen() {
               </p>
             ) : null}
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 ref={cancelRef}

@@ -642,7 +642,7 @@ describe("Note screen", () => {
     mockFetchOnce({
       id: "n_1",
       title: "Groceries",
-      body: "<h3>Heading</h3><p><strong>Bold</strong> and <a href=\"https://example.com\">a link</a></p><ul><li><p>Item</p></li></ul>",
+      body: '<h3>Heading</h3><p><strong>Bold</strong> and <a href="https://example.com">a link</a></p><ul><li><p>Item</p></li></ul>',
       updated_at: "2026-10-26T14:32:00",
     });
     const { container } = renderNote("/note?id=n_1");
@@ -741,5 +741,164 @@ describe("Note screen", () => {
     const alert = await screen.findByRole("alert");
     expect(isGreyscale(getComputedStyle(alert).color)).toBe(true);
     expect(isGreyscale(getComputedStyle(alert).backgroundColor)).toBe(true);
+  });
+
+  // ---------------------------------------------------------------------
+  // US-011-2 -- AC-022 / AC-023: the editor is responsive across desktop
+  // and mobile widths, with no horizontal scroll and touch-sized controls.
+  //
+  // Tailwind's generated stylesheet isn't loaded in this jsdom harness, so
+  // the utility classes that drive layout (grid columns, widths, min-width,
+  // wrapping) are asserted directly on `className` rather than through
+  // `getComputedStyle`, which only reflects the screen's own inline `style`
+  // values here. Fixed pixel sizes set via inline `style` (e.g. the 44px
+  // touch-target minimums) are still checked with `getComputedStyle`.
+  // ---------------------------------------------------------------------
+
+  it("[AC-022] at 1280px the screen root clips overflow and the content column, toolbar and status row stay within a bounded, centred width", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+
+    // The screen root clips any accidental overflow rather than growing the
+    // page horizontally, and the content column is capped well under
+    // 1280px and centred, so the toolbar and status row read as a
+    // comfortable column rather than being stretched edge to edge.
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toMatch(/overflow-x-hidden/);
+    const column = root.querySelector(":scope > div") as HTMLElement;
+    expect(column.className).toMatch(/mx-auto/);
+    expect(column.className).toMatch(/max-w-\[960px\]/);
+
+    // The formatting toolbar lays its four controls out as a grid -- a
+    // single readable row at this width, not an overflowing list.
+    const toolbar = screen.getByRole("group", { name: /formatting/i });
+    expect(toolbar.className).toMatch(/\bgrid\b/);
+    expect(toolbar.className).toMatch(/sm:grid-cols-4/);
+
+    // The status row's text is allowed to wrap and is capped to the width
+    // of its column, rather than forcing the pill (and the page) wider
+    // than the viewport.
+    const statusPill = screen.getByText(/last updated/i).closest("p") as HTMLElement;
+    expect(statusPill.className).toMatch(/whitespace-normal/);
+    expect(statusPill.className).toMatch(/max-w-full/);
+    expect(statusPill.className).toMatch(/break-words/);
+  });
+
+  it("[AC-023] at 375px the title, toolbar and body carry the classes that let them reflow to a narrow screen instead of overflowing it", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    const { container } = renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toMatch(/overflow-x-hidden/);
+
+    // The title field spans the full width of its narrow parent rather
+    // than carrying a fixed desktop width that would overflow.
+    const titleInput = screen.getByLabelText(/title/i) as HTMLInputElement;
+    expect(titleInput.className).toMatch(/\bw-full\b/);
+
+    // The toolbar is a 2-column grid by default (4 columns only from the
+    // `sm` breakpoint up), so its four controls reflow over two rows
+    // instead of running off a 375px screen.
+    const toolbar = screen.getByRole("group", { name: /formatting/i });
+    expect(toolbar.className).toMatch(/grid-cols-2/);
+    expect(toolbar.className).toMatch(/sm:grid-cols-4/);
+
+    // The body editor's wrapper can shrink below its content's natural
+    // width (`min-w-0`) instead of forcing the row wider than the screen,
+    // and its ProseMirror content wraps long, unbroken text/URLs.
+    const bodyWrap = screen.getByRole("textbox", { name: /body/i });
+    expect(bodyWrap.className).toMatch(/min-w-0/);
+
+    // The status pill's long text wraps rather than forcing the pill wider
+    // than its column.
+    const statusPill = screen.getByText(/last updated/i).closest("p") as HTMLElement;
+    expect(statusPill.className).toMatch(/whitespace-normal/);
+    expect(statusPill.className).toMatch(/break-words/);
+  });
+
+  it("[AC-023] at 375px the back, delete and all four formatting toolbar controls meet the 44px touch-target minimum", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Format me</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Format me")).toBeInTheDocument());
+
+    // h-11 is Tailwind's 2.75rem (44px) utility -- present on every one of
+    // these controls so none falls under the touch-target minimum.
+    const backButton = screen.getByRole("button", { name: /back to notes/i });
+    expect(backButton.className).toMatch(/\bh-11\b/);
+
+    const deleteButton = screen.getByRole("button", { name: /^delete$/i });
+    expect(deleteButton.className).toMatch(/\bh-11\b/);
+
+    const toolbar = screen.getByRole("group", { name: /formatting/i });
+    for (const button of within(toolbar).getAllByRole("button")) {
+      expect(button.className).toMatch(/\bh-11\b/);
+    }
+
+    // The title field's inline `min-height: 44px` is a real style value --
+    // checked with `getComputedStyle` rather than a class match.
+    const titleInput = screen.getByLabelText(/title/i) as HTMLElement;
+    expect(parseFloat(getComputedStyle(titleInput).minHeight)).toBeGreaterThanOrEqual(44);
+  });
+
+  it("[AC-023] at 375px the delete-confirmation dialog's title wraps and its Cancel / Delete controls stack full-width at >=44px tall", async () => {
+    mockFetchOnce({
+      id: "n_1",
+      title: "Groceries",
+      body: "<p>Milk</p>",
+      updated_at: "2026-10-26T14:32:00",
+    });
+    renderNote("/note?id=n_1");
+    await waitFor(() => expect(screen.getByText("Milk")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: /^delete$/i }));
+
+    const dialog = await screen.findByRole("dialog");
+    // The dialog is never wider than the viewport: it's capped at 480px but
+    // otherwise fills whatever narrower width it's given.
+    expect(dialog.className).toMatch(/w-full/);
+    expect(dialog.className).toMatch(/max-w-\[480px\]/);
+
+    const heading = screen.getByText(/delete “groceries”\?/i);
+    expect(heading.className).toMatch(/break-words/);
+
+    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    const deleteConfirmButton = screen.getByRole("button", { name: /delete note/i });
+    expect(cancelButton.className).toMatch(/\bh-11\b/);
+    expect(deleteConfirmButton.className).toMatch(/\bh-11\b/);
+    expect(cancelButton.className).toMatch(/w-full/);
+    expect(deleteConfirmButton.className).toMatch(/w-full/);
+
+    // The two actions stack as a single column below `sm` rather than
+    // squeezing two fixed-width columns into a 375px dialog.
+    const actionsRow = cancelButton.parentElement as HTMLElement;
+    expect(actionsRow.className).toMatch(/grid-cols-1/);
+    expect(actionsRow.className).toMatch(/sm:grid-cols-2/);
+  });
+
+  it("the formatting toolbar wraps (reflows into additional rows) rather than overflowing at narrow widths", () => {
+    renderNote("/note");
+    const toolbar = screen.getByRole("group", { name: /formatting/i });
+    // A 2-column grid below `sm` lays four controls out over two rows --
+    // the toolbar reflows instead of running off-screen; from `sm` up it
+    // widens to a single 4-column row.
+    expect(toolbar.className).toMatch(/grid-cols-2/);
+    expect(toolbar.className).toMatch(/sm:grid-cols-4/);
   });
 });

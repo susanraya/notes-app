@@ -355,7 +355,7 @@ export default function Screen() {
                 type="button"
                 aria-label="Clear search"
                 onClick={clearSearch}
-                className="qd-focus absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center transition-colors"
+                className="qd-focus absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center transition-colors"
                 style={{ color: T.muted, borderRadius: T.radius }}
               >
                 <X className="h-4 w-4" aria-hidden="true" />
