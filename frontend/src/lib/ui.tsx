@@ -94,10 +94,7 @@ export function CardFooter({ className, ...props }: Div) {
   return (
     <div
       {...props}
-      className={cx(
-        "flex items-center gap-2 border-t border-[var(--brand-border)] p-5",
-        className,
-      )}
+      className={cx("flex items-center gap-2 border-t border-[var(--brand-border)] p-5", className)}
     />
   );
 }

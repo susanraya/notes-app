@@ -47,7 +47,12 @@ function isGreyscaleColorValue(value: string): boolean {
 
 /** Colour-valued keys exported from brand.ts (the non-colour keys -- radius,
  * font names, density -- are intentionally excluded). */
-const BRAND_COLOR_KEYS = ["primaryColor", "accentColor", "neutralColor", "backgroundColor"] as const;
+const BRAND_COLOR_KEYS = [
+  "primaryColor",
+  "accentColor",
+  "neutralColor",
+  "backgroundColor",
+] as const;
 
 /** `--brand-*` custom properties in index.css whose values are colours
  * (hex or rgb/rgba), i.e. excluding radius and font-family tokens. */
