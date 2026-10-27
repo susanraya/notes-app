@@ -1,7 +1,7 @@
 """Note CRUD endpoints (architecture component: backend / Notes API, US-003-1).
 
 Thin handlers: persistence, ownership scoping and the newest-updated-first
-ordering live in `app/services/notes.py`. Every route here is guarded by
+ordering live in `app/services/notes.py`. Every route here depends on
 `get_current_owner` (US-001, NFR-002): an unauthenticated request never
 reaches a handler body.
 """
@@ -16,7 +16,7 @@ from app.dependencies import get_current_owner
 from app.schemas import NoteCreate, NoteOut, NoteUpdate
 from app.services import notes as notes_service
 
-router = APIRouter(prefix="/notes", tags=["notes"], dependencies=[Depends(get_current_owner)])
+router = APIRouter(prefix="/notes", tags=["notes"])
 
 
 def _parse_note_id(note_id: str) -> uuid.UUID:

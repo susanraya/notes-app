@@ -316,11 +316,11 @@ export default function Screen() {
 
   const st = status === "loading" || status === "loadError" ? STATUS.idle : STATUS[status];
 
-  const toolButton = (id: string, label: string, isActive: boolean | null, onClick: () => void) => (
+  const toolButton = (id: string, label: string, isActive: boolean, onClick: () => void) => (
     <button
       key={id}
       type="button"
-      aria-pressed={isActive === null ? undefined : isActive}
+      aria-pressed={isActive}
       onClick={onClick}
       disabled={status === "loading"}
       className="qd-ring h-11 w-full text-[13px] tracking-wide transition-colors duration-150"
@@ -541,9 +541,7 @@ export default function Screen() {
               <p
                 aria-live="polite"
                 className={
-                  linkHint
-                    ? "mt-3 flex items-start gap-2 break-words text-[13px]"
-                    : "sr-only"
+                  linkHint ? "mt-3 flex items-start gap-2 break-words text-[13px]" : "sr-only"
                 }
                 style={linkHint ? { color: accentText } : undefined}
               >

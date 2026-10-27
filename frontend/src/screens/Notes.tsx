@@ -34,7 +34,6 @@ const toRGB = (hex: string): string => {
 
 const N_RGB = toRGB(brand.neutralColor);
 const PRIMARY_RGB = toRGB(brand.primaryColor);
-const BG_RGB = toRGB(brand.backgroundColor);
 
 const T = {
   bg: brand.backgroundColor,
@@ -50,7 +49,6 @@ const T = {
   danger: brand.accentColor,
   dangerSoft: `rgba(${toRGB(brand.accentColor)}, 0.14)`,
   hoverBg: `rgba(${N_RGB}, 0.08)`,
-  backdrop: `rgba(${BG_RGB}, 0.6)`,
   radius: brand.radius,
 };
 
