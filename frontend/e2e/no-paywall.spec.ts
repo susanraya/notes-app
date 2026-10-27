@@ -193,12 +193,22 @@ test("[AC-026] no payment, billing or subscription endpoint can be reached throu
   }
 
   // No declared response schema carries a plan, tier, quota or billing field.
-  const schemas = openapi.components?.schemas ?? {};
-  for (const [schemaName, schema] of Object.entries<any>(schemas)) {
+  const schemas: Record<string, { properties?: Record<string, unknown> }> =
+    openapi.components?.schemas ?? {};
+  for (const [schemaName, schema] of Object.entries(schemas)) {
     const properties = schema?.properties ?? {};
     for (const propertyName of Object.keys(properties)) {
       const lowered = propertyName.toLowerCase();
-      for (const word of ["plan", "tier", "quota", "bill", "billing", "subscription", "pay", "payment"]) {
+      for (const word of [
+        "plan",
+        "tier",
+        "quota",
+        "bill",
+        "billing",
+        "subscription",
+        "pay",
+        "payment",
+      ]) {
         expect(lowered, `schema ${schemaName} field ${propertyName}`).not.toContain(word);
       }
     }
