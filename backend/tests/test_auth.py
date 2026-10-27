@@ -6,7 +6,6 @@ configured for this environment -- nothing here is mocked.
 import time
 
 import jwt
-import pytest
 from passlib.context import CryptContext
 
 from app.config import JWT_SECRET_KEY
