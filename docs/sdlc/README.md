@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 a simple notes app
 
-**Documentation version:** v4
+**Documentation version:** v5
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ a simple notes app
 |---|---|
 | [Requirements](requirements/README.md) | v1 approved |
 | [Architecture](architecture/README.md) | 11 entries |
-| [Development](development/README.md) | 7 entries |
+| [Development](development/README.md) | 8 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -26,12 +26,12 @@ a simple notes app
 | [Developer guide](development/developer-guide.md) | generated |
 | [API reference](development/api-reference.md) | 8 routes |
 | [Test report](testing/test-report.md) | no_tests |
-| [Tests](testing/test-cases.md) | 78 tests |
+| [Tests](testing/test-cases.md) | 131 tests |
 | [Deployment guide](deployment/deployment-guide.md) | not deployed yet |
 | [Runbook](deployment/runbook.md) | not deployed yet |
 | [Release notes](deployment/release-notes.md) | 0 releases |
 | [Traceability matrix](traceability-matrix.md) | 13 requirements |
-| [Changelog](CHANGELOG.md) | 4 versions |
+| [Changelog](CHANGELOG.md) | 5 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -52,10 +52,10 @@ a simple notes app
 
 ### Development
 
-- Input does not confirm whether all three sub-tasks (T1-T3) were individually verified, only that the parent story ticket was delivered on this commit.
-- No detail on which stories' code or which coverage threshold this fix targeted.
-- Discrepancy: run status says 'completed' but only 4 of 13 planned stories (US-001, US-002, US-003, US-012) have delivered tickets -- confirm whether Sprints 2-3 were descoped, deferred, or simply not reported.
-- No ticket evidence for rich-text formatting, view/edit/auto-save/delete flows, newest-first listing, search, responsive layout, or the no-payment-surface confirmation.
+- No explicit approver or approval date given for plan v1.
+- Discrepancy: run status says 'completed' but tickets for US-001, US-002, US-003, US-010, US-011, US-012, US-013 and subtasks US-001-T1/T2/T3 are absent from the input — unclear whether they were delivered untracked, still pending, or dropped from scope.
+- Sprint 1 goal (login/session protection + create-and-persist note) has no corresponding delivered tickets in this input.
+- Sprint 3 goal (search, responsive layout, no-payment confirmation) has no corresponding delivered tickets in this input.
 
 ### Testing
 
