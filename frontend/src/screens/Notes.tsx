@@ -54,6 +54,24 @@ const T = {
   radius: brand.radius,
 };
 
+// Shared, literal monochrome values for the delete-confirmation dialog.
+// These are duplicated verbatim in Note.tsx so both dialogs render
+// identically rather than drifting from each screen's own derived palette.
+const DIALOG = {
+  backdrop: "rgba(0, 0, 0, 0.78)",
+  surface: "rgb(18, 18, 18)",
+  border: "rgba(154, 154, 154, 0.25)",
+  title: "#ffffff",
+  desc: "rgba(154, 154, 154, 0.85)",
+  cancelBorder: "rgba(154, 154, 154, 0.3)",
+  cancelText: "#e5e5e5",
+  deleteBg: "#3a3a3a",
+  deleteText: "#ffffff",
+  errorBg: "rgba(154, 154, 154, 0.12)",
+  errorBorder: "rgba(154, 154, 154, 0.4)",
+  errorText: "#f5f5f5",
+};
+
 const HEAD = `${brand.fontHeading}, ui-sans-serif, system-ui, -apple-system, sans-serif`;
 const BODY = `${brand.fontBody}, Iowan Old Style, Georgia, serif`;
 const NUM = { fontVariantNumeric: "tabular-nums" } as const;
@@ -243,6 +261,20 @@ export default function Screen() {
     border: `1px solid ${T.hairline}`,
     borderRadius: T.radius,
     fontFamily: HEAD,
+  };
+  const dialogCancelBtn = {
+    backgroundColor: "transparent",
+    color: DIALOG.cancelText,
+    border: `1px solid ${DIALOG.cancelBorder}`,
+    borderRadius: T.radius,
+    fontFamily: HEAD,
+  };
+  const dialogDeleteBtn = {
+    backgroundColor: DIALOG.deleteBg,
+    color: DIALOG.deleteText,
+    borderRadius: T.radius,
+    fontFamily: HEAD,
+    border: `1px solid ${DIALOG.deleteBg}`,
   };
 
   const total = notes?.length ?? 0;
@@ -529,7 +561,7 @@ export default function Screen() {
       {pending ? (
         <div
           className="qd-backdrop fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
-          style={{ backgroundColor: T.backdrop }}
+          style={{ backgroundColor: DIALOG.backdrop }}
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closeDialog();
           }}
@@ -542,22 +574,22 @@ export default function Screen() {
             onKeyDown={onDialogKeyDown}
             className="qd-dialog w-full max-w-md p-6 shadow-2xl"
             style={{
-              backgroundColor: T.bg,
-              border: `1px solid ${T.hairline}`,
+              backgroundColor: DIALOG.surface,
+              border: `1px solid ${DIALOG.border}`,
               borderRadius: T.radius,
             }}
           >
             <h2
               id="delete-title"
               className="text-[20px] leading-snug"
-              style={{ fontFamily: HEAD, fontWeight: 600, color: T.text }}
+              style={{ fontFamily: HEAD, fontWeight: 600, color: DIALOG.title }}
             >
               Delete “{pending.title || "Untitled note"}”?
             </h2>
             <p
               id="delete-desc"
               className="mt-3 text-[15px] leading-relaxed"
-              style={{ color: T.muted }}
+              style={{ color: DIALOG.desc }}
             >
               It is removed permanently and cannot be recovered.
             </p>
@@ -567,15 +599,15 @@ export default function Screen() {
                 role="alert"
                 className="mt-4 flex items-start gap-2 p-3 text-[14px] leading-relaxed"
                 style={{
-                  color: T.text,
-                  backgroundColor: T.dangerSoft,
-                  border: `1px solid ${T.danger}`,
+                  color: DIALOG.errorText,
+                  backgroundColor: DIALOG.errorBg,
+                  border: `1px solid ${DIALOG.errorBorder}`,
                   borderRadius: T.radius,
                 }}
               >
                 <AlertCircle
                   className="mt-0.5 h-4 w-4 shrink-0"
-                  style={{ color: T.danger }}
+                  style={{ color: DIALOG.errorText }}
                   aria-hidden="true"
                 />
                 <span>{dialogError}</span>
@@ -589,7 +621,7 @@ export default function Screen() {
                 onClick={closeDialog}
                 disabled={deleting}
                 className="qd-focus inline-flex min-h-[44px] items-center justify-center px-4 text-[15px] transition-colors disabled:opacity-50"
-                style={quietBtn}
+                style={dialogCancelBtn}
               >
                 Cancel
               </button>
@@ -600,13 +632,7 @@ export default function Screen() {
                 disabled={deleting}
                 aria-busy={deleting ? "true" : "false"}
                 className="qd-focus inline-flex min-h-[44px] items-center justify-center gap-2 px-4 text-[15px] font-semibold transition-opacity hover:opacity-90 disabled:opacity-70"
-                style={{
-                  backgroundColor: T.danger,
-                  color: T.bg,
-                  borderRadius: T.radius,
-                  fontFamily: HEAD,
-                  border: "1px solid transparent",
-                }}
+                style={dialogDeleteBtn}
               >
                 {deleting ? (
                   <>

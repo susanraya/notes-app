@@ -48,6 +48,24 @@ const alpha = (hex: string, a: number) => {
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 };
 
+// Shared, literal monochrome values for the delete-confirmation dialog.
+// These are duplicated verbatim in Notes.tsx so both dialogs render
+// identically rather than drifting from each screen's own derived palette.
+const DIALOG = {
+  backdrop: "rgba(0, 0, 0, 0.78)",
+  surface: "rgb(18, 18, 18)",
+  border: "rgba(154, 154, 154, 0.25)",
+  title: "#ffffff",
+  desc: "rgba(154, 154, 154, 0.85)",
+  cancelBorder: "rgba(154, 154, 154, 0.3)",
+  cancelText: "#e5e5e5",
+  deleteBg: "#3a3a3a",
+  deleteText: "#ffffff",
+  errorBg: "rgba(154, 154, 154, 0.12)",
+  errorBorder: "rgba(154, 154, 154, 0.4)",
+  errorText: "#f5f5f5",
+};
+
 const formatStamp = (d: Date) =>
   `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ` +
   `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -74,10 +92,8 @@ export default function Screen() {
   const hair = alpha(brand.neutralColor, 0.18);
   const hairSoft = alpha(brand.neutralColor, 0.1);
   const surface = alpha(brand.neutralColor, 0.055);
-  const surfaceLift = mix(brand.backgroundColor, WHITE, 0.09);
   const primary = brand.primaryColor;
   const primaryLift = mix(brand.primaryColor, WHITE, 0.3);
-  const accentSolid = mix(brand.accentColor, [0, 0, 0], 0.16);
   const accentText = mix(brand.accentColor, WHITE, 0.4);
   const headingFont = `${brand.fontHeading}, ui-sans-serif, system-ui, sans-serif`;
   const bodyFont = `${brand.fontBody}, Georgia, 'Times New Roman', serif`;
@@ -91,6 +107,7 @@ export default function Screen() {
   const [linkHint, setLinkHint] = React.useState("");
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
+  const [dialogError, setDialogError] = React.useState("");
 
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteBtnRef = React.useRef<HTMLButtonElement | null>(null);
@@ -222,9 +239,15 @@ export default function Screen() {
     editor.chain().focus().setLink({ href: url }).run();
   };
 
+  const openDialog = () => {
+    setDialogError("");
+    setDeleteOpen(true);
+  };
+
   const closeDialog = () => {
     setDeleteOpen(false);
     setDeleting(false);
+    setDialogError("");
     if (deleteBtnRef.current) deleteBtnRef.current.focus();
   };
 
@@ -248,12 +271,15 @@ export default function Screen() {
 
   const confirmDelete = async () => {
     setDeleting(true);
+    setDialogError("");
     const id = noteIdRef.current;
     try {
       if (id) await apiFetch<void>(`/notes/${id}`, { method: "DELETE" });
       navigate("/notes");
     } catch {
       setDeleting(false);
+      setDialogError("The store turned that delete down. Nothing was removed — try once more.");
+      if (confirmRef.current) confirmRef.current.focus();
     }
   };
 
@@ -402,7 +428,7 @@ export default function Screen() {
             <button
               type="button"
               ref={deleteBtnRef}
-              onClick={() => setDeleteOpen(true)}
+              onClick={openDialog}
               disabled={status === "loading"}
               className="qd-ring inline-flex h-11 items-center gap-2 px-4 text-[14px] transition-colors duration-150 disabled:opacity-50"
               style={{
@@ -575,7 +601,7 @@ export default function Screen() {
       {deleteOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
-          style={{ backgroundColor: alpha(brand.backgroundColor, 0.82) }}
+          style={{ backgroundColor: DIALOG.backdrop }}
           onMouseDown={(e) => {
             if (e.target === e.currentTarget && !deleting) closeDialog();
           }}
@@ -588,8 +614,8 @@ export default function Screen() {
             onKeyDown={onDialogKey}
             className="w-full max-w-[480px] p-6"
             style={{
-              backgroundColor: surfaceLift,
-              border: `1px solid ${hair}`,
+              backgroundColor: DIALOG.surface,
+              border: `1px solid ${DIALOG.border}`,
               borderRadius: brand.radius,
               boxShadow: "0 28px 70px rgba(0, 0, 0, 0.55)",
             }}
@@ -597,14 +623,34 @@ export default function Screen() {
             <h2
               id="delete-title"
               className="text-[20px] leading-snug"
-              style={{ fontFamily: headingFont, fontWeight: 600, color: inkStrong }}
+              style={{ fontFamily: headingFont, fontWeight: 600, color: DIALOG.title }}
             >
               Delete “{title.trim() || "Untitled note"}”?
             </h2>
-            <p id="delete-desc" className="mt-3 text-[15px] leading-[1.6]" style={{ color: ink }}>
+            <p id="delete-desc" className="mt-3 text-[15px] leading-[1.6]" style={{ color: DIALOG.desc }}>
               It is removed permanently and cannot be recovered. This app keeps no version history
               and no trash.
             </p>
+
+            {dialogError ? (
+              <p
+                role="alert"
+                className="mt-4 flex items-start gap-2 p-3 text-[14px] leading-relaxed"
+                style={{
+                  color: DIALOG.errorText,
+                  backgroundColor: DIALOG.errorBg,
+                  border: `1px solid ${DIALOG.errorBorder}`,
+                  borderRadius: brand.radius,
+                }}
+              >
+                <Icons.AlertCircle
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                  style={{ color: DIALOG.errorText }}
+                  aria-hidden="true"
+                />
+                <span>{dialogError}</span>
+              </p>
+            ) : null}
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
@@ -615,9 +661,9 @@ export default function Screen() {
                 className="qd-ring h-11 w-full text-[14px] transition-colors duration-150"
                 style={{
                   backgroundColor: "transparent",
-                  border: `1px solid ${hair}`,
+                  border: `1px solid ${DIALOG.cancelBorder}`,
                   borderRadius: brand.radius,
-                  color: deleting ? muted : ink,
+                  color: DIALOG.cancelText,
                   fontFamily: headingFont,
                   fontWeight: 600,
                   opacity: deleting ? 0.6 : 1,
@@ -632,10 +678,10 @@ export default function Screen() {
                 onClick={confirmDelete}
                 className="qd-ring inline-flex h-11 w-full items-center justify-center gap-2 text-[14px] transition-colors duration-150"
                 style={{
-                  backgroundColor: accentSolid,
-                  border: `1px solid ${accentSolid}`,
+                  backgroundColor: DIALOG.deleteBg,
+                  border: `1px solid ${DIALOG.deleteBg}`,
                   borderRadius: brand.radius,
-                  color: "#ffffff",
+                  color: DIALOG.deleteText,
                   fontFamily: headingFont,
                   fontWeight: 600,
                   opacity: deleting ? 0.85 : 1,
@@ -646,6 +692,8 @@ export default function Screen() {
                     <Icons.Clock className="h-4 w-4" aria-hidden="true" />
                     Deleting…
                   </>
+                ) : dialogError ? (
+                  "Try delete again"
                 ) : (
                   <>
                     <Icons.Trash className="h-4 w-4" aria-hidden="true" />
