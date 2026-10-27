@@ -3,13 +3,31 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start e2e -->
-_No E2E run yet._
+**Status:** no_tests
+**Target:** Sprint 1 test gate, round 3
+**Date:** 2026-10-26
+
+Passed: 0 · Failed: 0 · Skipped: 0 · Flaky: 0 · Total: 0
 <!-- sdlc:auto:end e2e -->
 
 <!-- sdlc:auto:start unit -->
-_No unit-test run yet._
+**Coverage:** backend 99.1% · frontend 86.0%
+
+**Test cases:** — / — written
+
+**Lines written:** —
+
+**Files deferred:** —
 <!-- sdlc:auto:end unit -->
 
 <!-- sdlc:auto:start dev-checks -->
-_No development runs yet._
+### Sprint 1
+
+| Step | Status | Ticket | Finished |
+|---|---|---|---|
+| run_checks | succeeded | — | 2026-10-26 |
+
+### Sprint 1
+
+_No test steps recorded._
 <!-- sdlc:auto:end dev-checks -->

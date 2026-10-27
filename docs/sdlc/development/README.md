@@ -3,110 +3,66 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start narrative -->
-### DEV-PLAN-V1 · approved · source: plan:v1
+### PLAN-001 · approved · source: plan:v1
 
-Development plan version 1 is approved and organizes the notes app build into 3 sprints of 20-point capacity each, covering authentication, note creation/editing, list/search, and responsive storage.
+Approved version-1 sprint plan organizes the notes app build into 3 sprints of 20-point capacity each, covering authentication, core note CRUD, and search/responsiveness/pricing constraints.
 
-Plan status: approved, version 1. Three sprints defined: Sprint 1 (goal: stand up login/session protection and create-and-persist a note end-to-end), Sprint 2 (goal: complete core note management -- formatting, view, edit with auto-save, delete, newest-first list), Sprint 3 (goal: add search, responsive layout across all screens, and confirm the app has no payment surfaces). Each sprint has a capacity of 20 points. Backlog is organized into 5 epics covering all 13 known requirements.
+Sprint 1 (capacity 20): goal = stand up login/session protection and the ability to create and persist a note end-to-end; covers EPIC-001 (Single-User Access & Authentication: US-001 Log in with email and password, 8pts, backend-agent, with tasks US-001-T1 implement POST /auth/login, US-001-T2 build login page UI, US-001-T3 wire session storage and authenticated redirect; US-002 Protect notes behind authentication, 5pts, backend-agent) plus the note-creation/storage slice (US-003 Create a new note, 5pts, backend-agent; US-012 Store notes in the app's own database, 2pts, devops-agent, under EPIC-005). Sprint 2 (capacity 20): goal = complete core note management -- formatting, view, edit with auto-save, delete, newest-first list; covers EPIC-002 (US-004 Format note body with rich text, 5pts, frontend-agent) and EPIC-003 (US-005 View a note, 2pts, frontend-agent; US-006 Edit a note, 3pts, backend-agent; US-007 Auto-save with last-updated timestamp, 3pts, frontend-agent; US-008 Delete a note, 2pts, backend-agent) and EPIC-004's US-009 See all notes newest-first (3pts, backend-agent). Sprint 3 (capacity 20): goal = add search, responsive layout across all screens, and confirm the app has no payment surfaces; covers US-010 Search notes by title and body (5pts, backend-agent, EPIC-004), US-011 Use the app on desktop and mobile browsers (5pts, frontend-agent, EPIC-005), and US-013 Use the app free of charge (1pt, qa-agent, EPIC-005).
 
-**Related:** US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011, US-012, US-013
+**Related:** EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005, US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011, US-012, US-013
 
-- ⚠ No explicit mapping is given in the input tying individual stories/tasks to a specific sprint number -- sprint-to-item assignment below is inferred from sprint goal wording, not stated directly.
-- ⚠ No execution status (in-progress/done), code artifacts, or test results were provided for any sprint.
+### DEV-US-001 · approved · source: dev:US-001
 
-### DEV-SPRINT-1 · approved · source: plan:Sprint 1
+Login with email and password was implemented and delivered.
 
-Sprint 1 targets authentication/session protection and basic note creation persistence, with a capacity of 20 points.
+Ticket US-001 (Log in with email and password) status=delivered, commit=5b21427347099cbb8e8c22ffd69eb7adeb5c890e. Covers planned tasks US-001-T1 (POST /auth/login credential validation), US-001-T2 (login page UI), and US-001-T3 (session storage and authenticated redirect), per the Sprint 1 plan.
 
-Goal: stand up login/session protection and the ability to create and persist a note end-to-end. Capacity: 20 points. Goal wording aligns with US-001 (Log in with email and password, 8 pts, backend-agent), US-002 (Protect notes behind authentication, 5 pts, backend-agent), and US-003 (Create a new note, 5 pts, backend-agent) -- combined 18 of 20 points.
+**Related:** US-001, US-001-T1, US-001-T2, US-001-T3
 
-**Related:** US-001, US-002, US-003
+- ⚠ Input does not confirm whether all three sub-tasks (T1-T3) were individually verified, only that the parent story ticket was delivered on this commit.
 
-- ⚠ Input does not explicitly list which backlog items belong to Sprint 1; association above is inferred from the goal description only.
-- ⚠ No completion or demo status recorded for Sprint 1.
+### DEV-US-002 · approved · source: dev:US-002
 
-### DEV-SPRINT-2 · approved · source: plan:Sprint 2
+Authentication protection for notes was implemented and delivered in the same commit as the login story.
 
-Sprint 2 targets the core note management feature set: formatting, viewing, editing with auto-save, deleting, and newest-first listing.
+Ticket US-002 (Protect notes behind authentication) status=delivered, commit=5b21427347099cbb8e8c22ffd69eb7adeb5c890e, matching Sprint 1's goal of end-to-end login/session protection.
 
-Goal: complete core note management -- formatting, view, edit with auto-save, delete, and the newest-first list. Capacity: 20 points. Goal wording aligns with US-004 (Format note body with rich text, 5 pts, frontend-agent), US-005 (View a note, 2 pts, frontend-agent), US-006 (Edit a note, 3 pts, backend-agent), US-007 (Auto-save with last-updated timestamp, 3 pts, frontend-agent), US-008 (Delete a note, 2 pts, backend-agent), US-009 (See all notes newest-first, 3 pts, backend-agent) -- combined 18 of 20 points.
+**Related:** US-002, US-001
 
-**Related:** US-004, US-005, US-006, US-007, US-008, US-009
+### DEV-US-003 · approved · source: dev:US-003
 
-- ⚠ Input does not explicitly list which backlog items belong to Sprint 2; association above is inferred from the goal description only.
-- ⚠ No completion or demo status recorded for Sprint 2.
+Note creation was implemented and delivered.
 
-### DEV-SPRINT-3 · approved · source: plan:Sprint 3
+Ticket US-003 (Create a new note) status=delivered, commit=6d36a166ff9e88dfaf3293f788e3821a9e56e160, fulfilling the Sprint 1 goal of persisting a note end-to-end together with US-012.
 
-Sprint 3 targets search, responsive layout across all screens, and confirming the app has no payment surfaces.
+**Related:** US-003, US-012
 
-Goal: add search, responsive layout across all screens, and confirm the app has no payment surfaces. Capacity: 20 points. Goal wording aligns with US-010 (Search notes by title and body, 5 pts, backend-agent), US-011 (Use the app on desktop and mobile browsers, 5 pts, frontend-agent), US-012 (Store notes in the app's own database, 2 pts, devops-agent), US-013 (Use the app free of charge, 1 pt, qa-agent) -- combined 13 of 20 points.
+### DEV-US-012 · approved · source: dev:US-012
 
-**Related:** US-010, US-011, US-012, US-013
+Storage of notes in the app's own database was implemented and delivered.
 
-- ⚠ Input does not explicitly list which backlog items belong to Sprint 3; association above is inferred from the goal description only.
-- ⚠ US-012 (data storage) could plausibly belong to an earlier sprint since persistence is needed for Sprint 1's 'create and persist a note end-to-end' goal -- the plan does not clarify this, flagging a possible discrepancy.
-- ⚠ No completion or demo status recorded for Sprint 3.
+Ticket US-012 (Store notes in the app's own database) status=delivered, commit=6d36a166ff9e88dfaf3293f788e3821a9e56e160, same commit as US-003, consistent with Sprint 1 scope.
 
-### DEV-EPIC-001 · approved · source: plan:EPIC-001
+**Related:** US-012, US-003
 
-Epic covering single-user access and authentication: login and protecting notes behind a session.
+### DEV-FIX-COVERAGE-R1 · approved · source: dev:FIX-COVERAGE-R1
 
-EPIC-001 Single-User Access & Authentication (role unassigned at epic level). Contains US-001 Log in with email and password (8 pts, backend-agent), broken into: US-001-T1 Implement POST /auth/login with credential validation (backend-agent), US-001-T2 Build login page UI (frontend-agent), US-001-T3 Wire session storage and authenticated redirect (frontend-agent). Also contains US-002 Protect notes behind authentication (5 pts, backend-agent).
+A remediation ticket raised automated test coverage for the code delivered so far.
 
-**Related:** US-001, US-002
+Ticket FIX-COVERAGE-R1 (Raise test coverage) status=delivered, commit=6d36a166ff9e88dfaf3293f788e3821a9e56e160. Input does not specify which modules or target coverage percentage were addressed.
 
-- ⚠ No status (not started/in progress/done) given for any task or story under this epic.
-- ⚠ No code, PR, or test evidence provided to confirm these were actually implemented.
+**Related:** US-001, US-002, US-003, US-012
 
-### DEV-EPIC-002 · approved · source: plan:EPIC-002
+- ⚠ No detail on which stories' code or which coverage threshold this fix targeted.
 
-Epic covering note creation and rich-text editing capability.
+### DEV-GAP-SPRINT23 · draft · source: dev:run-status
 
-EPIC-002 Note Creation & Rich-Text Editing (role unassigned at epic level). Contains US-003 Create a new note (5 pts, backend-agent) and US-004 Format note body with rich text (5 pts, frontend-agent).
+The development run is marked 'completed', but no delivered tickets exist for any Sprint 2 or Sprint 3 story.
 
-**Related:** US-003, US-004
+Plan v1 scheduled US-004 (rich text formatting), US-005 (view note), US-006 (edit note), US-007 (auto-save with timestamp), US-008 (delete note), US-009 (newest-first list), US-010 (search), US-011 (responsive layout), and US-013 (free-of-charge confirmation) across Sprints 2 and 3. None of these appear in the ticket list despite the overall development run being reported as 'completed'.
 
-- ⚠ No status or implementation evidence given for US-003 or US-004.
-- ⚠ No breakdown tasks were provided for this epic's stories, unlike EPIC-001.
+**Related:** US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011, US-013
 
-### DEV-EPIC-003 · approved · source: plan:EPIC-003
-
-Epic covering viewing, editing (with auto-save), and deleting notes.
-
-EPIC-003 View, Edit & Delete Notes (role unassigned at epic level). Contains US-005 View a note (2 pts, frontend-agent), US-006 Edit a note (3 pts, backend-agent), US-007 Auto-save with last-updated timestamp (3 pts, frontend-agent), US-008 Delete a note (2 pts, backend-agent).
-
-**Related:** US-005, US-006, US-007, US-008
-
-- ⚠ No status or implementation evidence given for any story in this epic.
-- ⚠ No breakdown tasks were provided for this epic's stories.
-
-### DEV-EPIC-004 · approved · source: plan:EPIC-004
-
-Epic covering the notes list (newest-first) and search by title/body.
-
-EPIC-004 Notes List & Search (role unassigned at epic level). Contains US-009 See all notes newest-first (3 pts, backend-agent) and US-010 Search notes by title and body (5 pts, backend-agent).
-
-**Related:** US-009, US-010
-
-- ⚠ No status or implementation evidence given for US-009 or US-010.
-
-### DEV-EPIC-005 · approved · source: plan:EPIC-005
-
-Epic covering responsive web platform support, own-database storage, and free-of-charge usage.
-
-EPIC-005 Responsive Web Platform & Data Storage (role unassigned at epic level). Contains US-011 Use the app on desktop and mobile browsers (5 pts, frontend-agent), US-012 Store notes in the app's own database (2 pts, devops-agent), US-013 Use the app free of charge (1 pt, qa-agent).
-
-**Related:** US-011, US-012, US-013
-
-- ⚠ No status or implementation evidence given for US-011, US-012, or US-013.
-- ⚠ US-013's role assignment to qa-agent (rather than a product/billing role) suggests this item may be a verification check (confirming no paid surfaces exist) rather than a build task -- plan does not clarify this distinction.
-
-### DEV-USER-GUIDE-GAP · draft
-
-No end-user guide can be produced yet.
-
-The development phase input contains only an approved plan with sprint goals and backlog item definitions (epics, stories, tasks with points and roles). It contains no evidence that any screens, features, or flows have actually been built -- no completed tickets, UI descriptions, or code artifacts were supplied.
-
-- ⚠ Application build has not been confirmed complete; there is nothing yet to document for end-user usage instructions.
+- ⚠ Discrepancy: run status says 'completed' but only 4 of 13 planned stories (US-001, US-002, US-003, US-012) have delivered tickets -- confirm whether Sprints 2-3 were descoped, deferred, or simply not reported.
+- ⚠ No ticket evidence for rich-text formatting, view/edit/auto-save/delete flows, newest-first listing, search, responsive layout, or the no-payment-surface confirmation.
 <!-- sdlc:auto:end narrative -->
