@@ -3,7 +3,7 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start summary -->
-131 tests · Passed 107 · Failed 0 · Skipped 0 · Not run 24
+133 tests · Passed 107 · Failed 0 · Skipped 0 · Not run 26
 
 Acceptance criteria covered: 20/37 · passing: 7/37
 <!-- sdlc:auto:end summary -->
@@ -81,11 +81,11 @@ Acceptance criteria covered: 20/37 · passing: 7/37
 | AC-025 | Notes screen > [AC-025] offers no sync, import, or export option | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
 | — | Notes screen > deletes a note and removes it from the list | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
 | — | Notes screen > shows an error state and can retry when the list fails to load | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
-| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[delete-/5eb5a114-fde8-4713-bbb6-fa9956418664-None] | Integration | Passed | `backend/tests/integration/test_notes.py` |
+| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[delete-/57885c5a-500c-4002-8f8c-6bbec471eaee-None] | Integration | Passed | `backend/tests/integration/test_notes.py` |
 | AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[get--None] | Integration | Passed | `backend/tests/integration/test_notes.py` |
-| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[get-/bd6b2bff-d44e-4430-8698-1727a57e05e1-None] | Integration | Passed | `backend/tests/integration/test_notes.py` |
+| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[get-/f7035f12-a4c2-42e2-ab04-a051a36353f5-None] | Integration | Passed | `backend/tests/integration/test_notes.py` |
 | AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[post--json_body1] | Integration | Passed | `backend/tests/integration/test_notes.py` |
-| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[put-/c156cfa1-0f10-4fc8-bc83-da2177277b71-json_body3] | Integration | Passed | `backend/tests/integration/test_notes.py` |
+| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[put-/f9d07bb4-1cea-4f2b-815b-2cb551f046ea-json_body3] | Integration | Passed | `backend/tests/integration/test_notes.py` |
 | AC-007 | test_ac007_delete_note_removes_it | Integration | Passed | `backend/tests/integration/test_notes.py` |
 | AC-007 | test_ac007_delete_unknown_note_id_returns_404 | Integration | Passed | `backend/tests/integration/test_notes.py` |
 | AC-007 | test_ac007_get_note_by_id_returns_it | Integration | Passed | `backend/tests/integration/test_notes.py` |
@@ -151,6 +151,13 @@ Acceptance criteria covered: 20/37 · passing: 7/37
 | AC-012 | [AC-012] PUT /notes/{id} response reports an updated_at strictly later than the note's created_at | E2E | Not run yet | `frontend/e2e/edit-note.spec.ts` |
 | AC-012 | [AC-012] saving an edit through the UI advances the note's updated_at, as confirmed directly from the API | E2E | Not run yet | `frontend/e2e/edit-note.spec.ts` |
 | — | a changed title and body are stored and are what the note shows when it is reopened | E2E | Not run yet | `frontend/e2e/edit-note.spec.ts` |
+
+### US-014: Define global black-and-white theme tokens
+
+| Criteria | Test | Level | Result | File |
+|---|---|---|---|---|
+| — | the login screen's body background and primary button colours are greyscale, with no purple anywhere | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+| — | the notes screen's body background and primary button colours are greyscale, with no purple anywhere | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
 
 ## Project setup
 

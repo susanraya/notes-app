@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 a simple notes app
 
-**Documentation version:** v6
+**Documentation version:** v7
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ a simple notes app
 |---|---|
 | [Requirements](requirements/README.md) | v2 approved |
 | [Architecture](architecture/README.md) | 11 entries |
-| [Development](development/README.md) | 8 entries |
+| [Development](development/README.md) | 12 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -26,12 +26,12 @@ a simple notes app
 | [Developer guide](development/developer-guide.md) | generated |
 | [API reference](development/api-reference.md) | 8 routes |
 | [Test report](testing/test-report.md) | no_tests |
-| [Tests](testing/test-cases.md) | 131 tests |
+| [Tests](testing/test-cases.md) | 133 tests |
 | [Deployment guide](deployment/deployment-guide.md) | not deployed yet |
 | [Runbook](deployment/runbook.md) | not deployed yet |
 | [Release notes](deployment/release-notes.md) | 0 releases |
 | [Traceability matrix](traceability-matrix.md) | 20 requirements |
-| [Changelog](CHANGELOG.md) | 6 versions |
+| [Changelog](CHANGELOG.md) | 7 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -57,10 +57,18 @@ a simple notes app
 
 ### Development
 
-- No explicit approver or approval date given for plan v1.
-- Discrepancy: run status says 'completed' but tickets for US-001, US-002, US-003, US-010, US-011, US-012, US-013 and subtasks US-001-T1/T2/T3 are absent from the input — unclear whether they were delivered untracked, still pending, or dropped from scope.
-- Sprint 1 goal (login/session protection + create-and-persist note) has no corresponding delivered tickets in this input.
-- Sprint 3 goal (search, responsive layout, no-payment confirmation) has no corresponding delivered tickets in this input.
+- The input does not explicitly assign each backlog item to a sprint -- item-to-sprint mapping in this documentation was inferred from sprint goal wording and should be confirmed.
+- No explicit per-item sprint assignment was given; mapping to US-001/US-002/US-003 is inferred from the sprint goal description, not stated directly.
+- No explicit per-item sprint assignment was given; mapping is inferred from the sprint goal description, not stated directly.
+- No explicit per-item sprint assignment was given; mapping is inferred from the sprint goal description.
+- US-012 (store notes in the app's own database) and the black-and-white theme stories (US-014 through US-020) are not clearly placed in any sprint goal text -- their sprint assignment is unknown.
+- No detail was provided on what CHG-001 actually changes, which requirements it affects, or its backlog items -- cannot be traced to any US-xxx requirement.
+- No delivery/completion status given for US-001, US-002, or their sub-tasks beyond the overall 'development run completed' status.
+- No delivery/completion status given for US-003 or US-004 beyond the overall run status.
+- No delivery/completion status given for US-005 through US-008 beyond the overall run status.
+- No delivery/completion status given for US-009 or US-010 beyond the overall run status.
+- Only US-014 has a recorded delivery status (delivered) in the input; US-011, US-012, US-013, US-015 through US-020 have no stated delivery status, commit, or completion evidence despite the overall run being marked 'completed'.
+- Overall run is marked 'completed' but per-ticket delivery evidence is missing for US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011, US-012, US-013, US-015, US-016, US-017, US-018, US-019, US-020, and all US-001 sub-tasks -- cannot confirm what was actually built and merged versus merely planned.
 
 ### Testing
 

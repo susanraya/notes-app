@@ -27,6 +27,6 @@ Built from recorded links, not written by a model: requirement key → plan item
 | US-011 | EPIC-005 | Use the app on desktop and mobile browsers | US-011 | 3 | frontend | — | — | not started | not run | 0/2 tested · 0/2 passing | — |
 | US-012 | EPIC-005 | Store notes in the app's own database | US-012 | 1 | backend, database, notes, users | — | 6d36a16 | delivered | not run | 2/2 tested · 1/2 passing | — |
 | US-013 | EPIC-005 | Use the app free of charge | US-013 | 3 | frontend | — | — | not started | not run | 0/1 tested · 0/1 passing | — |
-| US-014 | EPIC-005 | Define global black-and-white theme tokens | US-014 | 2 | — | — | — | not started | not run | 0/1 tested · 0/1 passing | — |
+| US-014 | EPIC-005 | Define global black-and-white theme tokens | US-014 | 2 | — | frontend/e2e/theme-monochrome.spec.ts, frontend/e2e/theme-monochrome.test.ts, frontend/e2e/vitest.monochrome.config.ts, frontend/package.json, frontend/src/index.css +2 more | d23f4b2 | delivered | not run | 0/1 tested · 0/1 passing | — |
 | US-020 | EPIC-005 | Verify black-and-white theme consistency across desktop and mobile browsers | US-020 | 4 | — | — | — | not started | not run | 0/1 tested · 0/1 passing | — |
 <!-- sdlc:auto:end matrix -->
