@@ -17,8 +17,11 @@ ruff>=0.6
 
 # BEGIN QUORQ ARCHITECTURE PACKAGES
 passlib[bcrypt]>=1.7.4
-# passlib's bcrypt backend reads `bcrypt.__about__`, which 4.1+ removed; pinned
-# below 4.1 so password hashing does not raise on every call.
+# passlib 1.7.4's bcrypt backend self-test hashes a long fixed string to
+# detect a historical wrap-around bug; bcrypt>=4.1 raises ValueError instead
+# of truncating for inputs over 72 bytes, which breaks that self-test (and
+# therefore every hash/verify call) before passlib ever sees a real
+# password. Pinned to the last release that still truncates silently.
 bcrypt==4.0.1
 PyJWT>=2.8.0
 # END QUORQ ARCHITECTURE PACKAGES
