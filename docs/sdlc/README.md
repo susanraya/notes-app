@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 a simple notes app
 
-**Documentation version:** v8
+**Documentation version:** v9
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ a simple notes app
 |---|---|
 | [Requirements](requirements/README.md) | v2 approved |
 | [Architecture](architecture/README.md) | 11 entries |
-| [Development](development/README.md) | 12 entries |
+| [Development](development/README.md) | 2 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -31,7 +31,7 @@ a simple notes app
 | [Runbook](deployment/runbook.md) | not deployed yet |
 | [Release notes](deployment/release-notes.md) | 0 releases |
 | [Traceability matrix](traceability-matrix.md) | 20 requirements |
-| [Changelog](CHANGELOG.md) | 8 versions |
+| [Changelog](CHANGELOG.md) | 9 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -55,18 +55,9 @@ a simple notes app
 
 ### Development
 
-- The input does not explicitly assign each backlog item to a sprint -- item-to-sprint mapping in this documentation was inferred from sprint goal wording and should be confirmed.
-- No explicit per-item sprint assignment was given; mapping to US-001/US-002/US-003 is inferred from the sprint goal description, not stated directly.
-- No explicit per-item sprint assignment was given; mapping is inferred from the sprint goal description, not stated directly.
-- No explicit per-item sprint assignment was given; mapping is inferred from the sprint goal description.
-- US-012 (store notes in the app's own database) and the black-and-white theme stories (US-014 through US-020) are not clearly placed in any sprint goal text -- their sprint assignment is unknown.
-- No detail was provided on what CHG-001 actually changes, which requirements it affects, or its backlog items -- cannot be traced to any US-xxx requirement.
-- No delivery/completion status given for US-001, US-002, or their sub-tasks beyond the overall 'development run completed' status.
-- No delivery/completion status given for US-003 or US-004 beyond the overall run status.
-- No delivery/completion status given for US-005 through US-008 beyond the overall run status.
-- No delivery/completion status given for US-009 or US-010 beyond the overall run status.
-- Only US-014 has a recorded delivery status (delivered) in the input; US-011, US-012, US-013, US-015 through US-020 have no stated delivery status, commit, or completion evidence despite the overall run being marked 'completed'.
-- Overall run is marked 'completed' but per-ticket delivery evidence is missing for US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011, US-012, US-013, US-015, US-016, US-017, US-018, US-019, US-020, and all US-001 sub-tasks -- cannot confirm what was actually built and merged versus merely planned.
+- Plan input does not explicitly state which backlog items are assigned to which sprint; approximate groupings can be inferred from story-point totals matching each sprint's capacity of 20, but this mapping is not confirmed by the input and should not be treated as authoritative.
+- Development run status is reported as 'completed', yet ticket-level delivery data (status, commit) is recorded for only 1 of the 20 stories (US-014) and none of the 4 tasks under US-001 -- this is a discrepancy between the reported run status and the evidence available.
+- No ticket-level development data (status/commit) was provided for the 19 other planned stories (US-001-US-013, US-015-US-020) or the 4 tasks under US-001, so their implementation status cannot be documented here.
 
 ### Testing
 
