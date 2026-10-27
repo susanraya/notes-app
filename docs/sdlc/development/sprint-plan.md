@@ -23,7 +23,7 @@ Capacity: 20 points · Committed: 20
 
 Complete core note management: formatting, view, edit with auto-save, delete, and the newest-first list
 
-Capacity: 20 points · Committed: 18
+Capacity: 20 points · Committed: 20
 
 | Key | Type | Title | Points | Role | Depends on |
 |---|---|---|---|---|---|
@@ -33,18 +33,34 @@ Capacity: 20 points · Committed: 18
 | US-007 | Story | Auto-save with last-updated timestamp | 3 | frontend-agent | US-006 |
 | US-008 | Story | Delete a note | 2 | backend-agent | US-003 |
 | US-009 | Story | See all notes newest-first | 3 | backend-agent | US-003 |
+| US-014 | Story | Define global black-and-white theme tokens | 2 | frontend-agent | — |
 
 ## Sprint 3: Sprint 3
 
 Add search, responsive layout across all screens, and confirm the app has no payment surfaces
 
-Capacity: 20 points · Committed: 11
+Capacity: 20 points · Committed: 19
 
 | Key | Type | Title | Points | Role | Depends on |
 |---|---|---|---|---|---|
 | US-010 | Story | Search notes by title and body | 5 | backend-agent | US-009 |
 | US-011 | Story | Use the app on desktop and mobile browsers | 5 | frontend-agent | US-003, US-005, US-009 |
 | US-013 | Story | Use the app free of charge | 1 | qa-agent | — |
+| US-015 | Story | Apply black-and-white theme to the login screen | 1 | frontend-agent | — |
+| US-016 | Story | Apply black-and-white theme to the notes list and search box | 2 | frontend-agent | — |
+| US-017 | Story | Apply black-and-white theme to the note creation editor and formatting toolbar | 2 | frontend-agent | — |
+| US-018 | Story | Apply black-and-white theme to viewing and editing an existing note | 2 | frontend-agent | — |
+| US-019 | Story | Apply black-and-white theme to the delete confirmation | 1 | frontend-agent | — |
+
+## Sprint 4: Sprint 4
+
+Change requests (CHG-001)
+
+Capacity: 20 points · Committed: 2
+
+| Key | Type | Title | Points | Role | Depends on |
+|---|---|---|---|---|---|
+| US-020 | Story | Verify black-and-white theme consistency across desktop and mobile browsers | 2 | qa-agent | — |
 
 ## Unscheduled
 

@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start summary -->
 131 tests · Passed 107 · Failed 0 · Skipped 0 · Not run 24
 
-Acceptance criteria covered: 20/26 · passing: 7/26
+Acceptance criteria covered: 20/37 · passing: 7/37
 <!-- sdlc:auto:end summary -->
 
 <!-- sdlc:auto:start tests -->

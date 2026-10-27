@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 a simple notes app
 
-**Documentation version:** v5
+**Documentation version:** v6
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -13,7 +13,7 @@ a simple notes app
 <!-- sdlc:auto:start contents -->
 | Document | State |
 |---|---|
-| [Requirements](requirements/README.md) | v1 approved |
+| [Requirements](requirements/README.md) | v2 approved |
 | [Architecture](architecture/README.md) | 11 entries |
 | [Development](development/README.md) | 8 entries |
 | [Testing](testing/README.md) | 1 entry |
@@ -22,7 +22,7 @@ a simple notes app
 | [Data model](architecture/data-model.md) | generated |
 | [API (OpenAPI)](architecture/api/openapi.yaml) | generated |
 | [Decisions (ADRs)](architecture/adr/README.md) | 4 decisions |
-| [Sprint plan](development/sprint-plan.md) | 3 sprints |
+| [Sprint plan](development/sprint-plan.md) | 4 sprints |
 | [Developer guide](development/developer-guide.md) | generated |
 | [API reference](development/api-reference.md) | 8 routes |
 | [Test report](testing/test-report.md) | no_tests |
@@ -30,8 +30,8 @@ a simple notes app
 | [Deployment guide](deployment/deployment-guide.md) | not deployed yet |
 | [Runbook](deployment/runbook.md) | not deployed yet |
 | [Release notes](deployment/release-notes.md) | 0 releases |
-| [Traceability matrix](traceability-matrix.md) | 13 requirements |
-| [Changelog](CHANGELOG.md) | 5 versions |
+| [Traceability matrix](traceability-matrix.md) | 20 requirements |
+| [Changelog](CHANGELOG.md) | 6 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -39,7 +39,12 @@ a simple notes app
 <!-- sdlc:auto:start open-gaps -->
 ### Requirements
 
-- No architecture-phase input exists yet to confirm this stack was actually applied in a design.
+- No prior (v1) requirements content was provided, so it is unclear what changed between v1 and v2 of the requirements.
+- How the single account's credentials are initially provisioned (who sets the email/password, and how) is not specified.
+- No password-reset/recovery flow is described.
+- Session duration/expiry behavior is not specified.
+- Whether saving is purely automatic (e.g. on a timer/blur) or requires an explicit save action -- or both -- is not specified; AC-013 allows for either.
+- This is a verification/QA activity described at requirements time; no actual verification results exist yet since testing has not started.
 
 ### Architecture
 

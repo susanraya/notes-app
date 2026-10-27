@@ -5,191 +5,196 @@
 <!-- sdlc:auto:start narrative -->
 ## Summary
 
-### REQ-TECHSTACK · approved · source: requirements:technology-stack
+### REQ-SCOPE · draft · source: requirements:scope
 
-Product owner approved a fixed technology stack: FastAPI 0.115 backend, AWS cloud, PostgreSQL 16 database, React 19 frontend.
+Defines the overall delivery scope and boundaries for the notes app: a lightweight, single-user, free, web-only notes application with no attachments or organisational features.
 
-Decision: design and build against exactly this stack, no substitutions. Rationale given: FastAPI is lean and validates requests for the small single-user login/CRUD/search backend; AWS covers browser-reachable hosting plus managed, backed-up Postgres (RDS) at low cost for a free single-user app; PostgreSQL 16 stores structured note records (title, body, last-updated timestamp) with built-in full-text search covering the title+body search requirement; React 19 supports the responsive, interactive rich-text editor (via libraries like TipTap/Slate) and instant search UI across desktop and mobile.
+Delivery scope: lightweight. Requirements version: 2. In-scope capabilities: single-user login, create/view/edit/delete notes with rich-text body, rich-text formatting (bold/lists/headings/links), auto-save with last-updated timestamp, notes list ordered newest-first, search by title and body, responsive desktop/mobile layout, email-and-password login with no public sign-up, free app with no payments, notes stored only in the app's own store with no external sync. Out of scope: file/image attachments on notes; tags, labels, folders and notebooks for organising notes.
 
-- ⚠ No architecture-phase input exists yet to confirm this stack was actually applied in a design.
+**Related:** US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011, US-012, US-013
 
-### REQ-SCOPE-EXCLUSIONS · draft · source: requirements:scope
+- ⚠ No prior (v1) requirements content was provided, so it is unclear what changed between v1 and v2 of the requirements.
 
-Explicit out-of-scope items for this delivery: file/image attachments and any organizing structures (tags, labels, folders, notebooks).
+### REQ-TECHSTACK · approved · source: requirements:techstack
 
-Requirements state these must not be designed or built in this scope: (1) File and image attachments on notes, (2) Tags, labels, folders and notebooks for organising notes. Confirmed again in AC-009 (no attachment option in editor) and AC-019 (no tags/labels/folders/notebooks in notes list).
+Technology stack approved by the product owner: FastAPI backend, AWS cloud, PostgreSQL 16 database, React 19 frontend. Stack choices are explicitly tied to the app's single-user, rich-text, searchable, responsive requirements.
 
-### REQ-US-001 · draft · source: requirements:US-001
+Backend: FastAPI 0.115 - chosen for a small, well-defined API (single login, CRUD + search on notes) with built-in request validation; supports US-001/US-002 login and note CRUD stories. Cloud: AWS - chosen for browser reachability from desktop/mobile and managed Postgres (RDS) backups at low cost for a single-user free app; supports US-011, US-012, US-013. Database: PostgreSQL 16 - chosen for reliable structured storage of title/body/last-updated fields, newest-first ordering, and built-in full-text search covering both title and body; supports US-009, US-010, US-012. Frontend: React 19 - chosen for responsive, interactive rich-text editing with instant search-as-you-type, using mature editor libraries (TipTap, Slate) for formatting; supports US-004, US-010, US-011. The product owner approved designing/building against exactly this stack, no substitutions.
 
-Critical story: the sole owner logs in with email and password to reach their private notes.
+**Related:** US-001, US-004, US-010, US-011, US-012
 
-Acceptance: (AC-001) correct email+password on the login page authenticates the user and routes them to the notes list. (AC-002) incorrect credentials keep the user on the login page with an error message. (AC-003) no self-service sign-up or account-creation option is offered anywhere on the login page, consistent with the epic assumption that the single account's credentials are provisioned outside any self-service flow.
+### US-001 · draft · source: requirements:US-001
 
-**Related:** EPIC-001, AC-001, AC-002, AC-003, NFR-002
+Single owner logs in with email and password to reach their private notes; no public sign-up or roles exist.
 
-### REQ-US-002 · draft · source: requirements:US-002
+AC-001: correct email/password submission authenticates the user and routes to the notes list. AC-002: incorrect credentials keep the user on the login page with an error message. AC-003: no self-service sign-up or account-creation option is offered on the login page. Assumption: the single account's credentials are provisioned outside any self-service flow.
 
-Critical story: all notes screens require a valid login, and logging out ends the session.
+**Related:** US-002, US-015
 
-Acceptance: (AC-004) an unauthenticated visitor attempting to open the notes list, view, or editor directly is redirected to the login page, never seeing note content. (AC-005) logging out ends the session and returns the user to the login page; reaching notes screens again requires logging back in.
+- ⚠ How the single account's credentials are initially provisioned (who sets the email/password, and how) is not specified.
+- ⚠ No password-reset/recovery flow is described.
 
-**Related:** EPIC-001, AC-004, AC-005, NFR-001, NFR-002
+### US-002 · draft · source: requirements:US-002
 
-### REQ-US-003 · draft · source: requirements:US-003
+All notes screens (list, view, editor) require a valid login session; logging out ends the session and returns to login.
 
-Critical story: logged-in user creates a new note with a title and rich-text body.
+AC-004: unauthenticated attempts to open any notes screen redirect to the login page, with no note content shown. AC-005: logging out ends the session, returns to the login page, and subsequent access again requires login.
 
-Acceptance: (AC-006) creating a new note opens an empty editor with a title field and a rich-text body field. (AC-007) once saved, the note is stored and appears in the notes list.
+**Related:** US-001
 
-**Related:** EPIC-002, AC-006, AC-007
+- ⚠ Session duration/expiry behavior is not specified.
 
-### REQ-US-004 · draft · source: requirements:US-004
+### US-015 · draft · source: requirements:US-015
 
-High-priority story: note body supports bold, lists, headings and links; no attachments.
+Login screen is restyled with the new black-and-white theme, replacing the prior indigo/purple palette.
 
-Acceptance: (AC-008) applying bold, list, heading, or link formatting to selected text shows the formatting in the editor and it persists through save and reopen. (AC-009) the editor offers no option to add file or image attachments, consistent with the out-of-scope exclusion.
+AC-028: login page background, text and input styling use the black-and-white palette instead of indigo/purple. AC-029: the credentials-error message is styled with the new monochrome palette and remains clearly legible.
 
-**Related:** EPIC-002, AC-008, AC-009
+**Related:** US-001, US-014
 
-### REQ-US-005 · draft · source: requirements:US-005
+### US-003 · draft · source: requirements:US-003
 
-High-priority story: user opens a saved note to read its full title and formatted body.
+Logged-in user creates a new note with a title and rich-text body, which is saved and appears in the notes list.
 
-Acceptance: (AC-010) selecting a saved note from the list displays its title and rich-text body with formatting preserved.
+AC-006: choosing to create a new note opens an empty editor with title and rich-text body fields. AC-007: after entering title and/or body and saving, the note is stored and appears in the notes list.
 
-**Related:** EPIC-003, AC-010
+**Related:** US-004, US-007
 
-### REQ-US-006 · draft · source: requirements:US-006
+### US-004 · draft · source: requirements:US-004
 
-High-priority story: user edits the title/body of an existing note.
+Note body supports bold, lists, headings and links; no file or image attachment options are offered, per scope exclusion.
 
-Acceptance: (AC-011) changing and saving a note's title or body stores the update and shows it on reopen. (AC-012) saving an edit sets the note's last-updated timestamp to the time of that change.
+AC-008: applying bold, a list, a heading or a link to selected text shows the formatting in the editor and retains it when the note is saved and reopened. AC-009: the editor offers no option to add file or image attachments (explicitly out of scope).
 
-**Related:** EPIC-003, AC-011, AC-012
+**Related:** US-003, US-017
 
-### REQ-US-007 · draft · source: requirements:US-007
+### US-017 · draft · source: requirements:US-017
 
-High-priority story: changes are auto-saved (or explicitly saved) so work is never lost, with timestamp updates.
+Note creation editor and its formatting toolbar (bold/list/heading/link) are restyled with the black-and-white theme.
 
-Acceptance: (AC-013) saving changes, automatically or via explicit action, persists content and updates the last-updated timestamp. (AC-014) after reloading the app and reopening a note, the most recently saved changes are present. No version history is kept per the epic assumption.
+AC-032: title field, body field and toolbar render using the black-and-white palette instead of indigo/purple. AC-033: active/selected toolbar states (bold, list, heading, link) are rendered in the new monochrome palette.
 
-**Related:** EPIC-003, AC-013, AC-014, NFR-003
+**Related:** US-004, US-014
 
-### REQ-US-008 · draft · source: requirements:US-008
+### US-005 · draft · source: requirements:US-005
 
-Medium-priority story: user deletes a note they no longer need; deletion is permanent.
+User opens a saved note from the list and reads its full title and formatted body.
 
-Acceptance: (AC-015) confirming deletion removes the note from the notes list and from search results. (AC-016) a deleted note cannot be recovered from within the app -- this is an accepted risk per NFR-007 since no version history is kept.
+AC-010: selecting a saved note from the notes list displays its title and rich-text body with formatting preserved.
 
-**Related:** EPIC-003, AC-015, AC-016, NFR-007
+**Related:** US-009, US-018
 
-### REQ-US-009 · draft · source: requirements:US-009
+### US-006 · draft · source: requirements:US-006
 
-High-priority story: notes list shows all notes newest-first by last-updated timestamp.
+User edits the title and/or body of an existing note; the change is stored and the note's last-updated timestamp is set to the change time.
 
-Acceptance: (AC-017) the notes list shows all notes ordered by last-updated timestamp, most recent first. (AC-018) editing a note moves it to the top of the list as its timestamp changes. (AC-019) no tags, labels, folders or notebooks are presented, consistent with the out-of-scope exclusion.
+AC-011: changing title or body and saving stores the updated content, shown on reopening the note. AC-012: saving an edit sets the note's last-updated timestamp to the time of that change.
 
-**Related:** EPIC-004, AC-017, AC-018, AC-019
+**Related:** US-005, US-007, US-018
 
-### REQ-US-010 · draft · source: requirements:US-010
+### US-007 · draft · source: requirements:US-007
 
-High-priority story: search box filters notes by matching text in title and body.
+Changes to a note are saved (automatically or via explicit save) without losing work, and persist across app reloads.
 
-Acceptance: (AC-020) typing a term filters the list to notes whose title or body text matches it. (AC-021) when no notes match, an empty-result indication is shown and the term can be cleared to return to the full list. Per NFR-004, filtering happens as the user types.
+AC-013: saving (automatic or explicit) persists note content and updates the last-updated timestamp. AC-014: reloading the app and reopening a note shows the most recently saved changes. Assumption: no version history is kept.
 
-**Related:** EPIC-004, AC-020, AC-021, NFR-004
+**Related:** US-003, US-006
 
-### REQ-US-011 · draft · source: requirements:US-011
+- ⚠ Whether saving is purely automatic (e.g. on a timer/blur) or requires an explicit save action -- or both -- is not specified; AC-013 allows for either.
 
-High-priority story: app adapts to desktop and mobile browser screen sizes.
+### US-008 · draft · source: requirements:US-008
 
-Acceptance: (AC-022) login, notes list, and editor are usable and readable at desktop widths. (AC-023) the same screens adapt to mobile screen sizes with all core actions usable, without any native app.
+User deletes a note they no longer need; it is permanently removed from the list and search with no recovery option.
 
-**Related:** EPIC-005, AC-022, AC-023, NFR-005
+AC-015: confirming deletion removes the note so it no longer appears in the notes list or search results. AC-016: deleted notes cannot be recovered from within the app (no version history, per assumption).
 
-### REQ-US-012 · draft · source: requirements:US-012
+**Related:** US-009, US-010, US-019
 
-Medium-priority story: notes are stored in the app's own database, with no external sync/export.
+### US-018 · draft · source: requirements:US-018
 
-Acceptance: (AC-024) logging out and back in later retrieves notes from the app's own database, shown as before. (AC-025) no option to sync with or export to external services (e.g. Evernote, Google Keep) is offered in this version.
+Note view and edit screens are restyled with the black-and-white theme, replacing indigo/purple.
 
-**Related:** EPIC-005, AC-024, AC-025, NFR-001, NFR-006
+AC-034: viewing a saved note renders title, body and formatting using the black-and-white palette. AC-035: the edit screen uses the same black-and-white palette as the view screen.
 
-### REQ-US-013 · draft · source: requirements:US-013
+**Related:** US-005, US-006, US-014
 
-Low-priority story: the app is free, with no payment, billing or subscription ever presented.
+### US-019 · draft · source: requirements:US-019
 
-Acceptance: (AC-026) no payment, billing, subscription, or paywall screen is presented at any point while using any feature of the app.
+Delete confirmation dialog is restyled with the black-and-white theme.
 
-**Related:** EPIC-005, AC-026
+AC-036: the delete confirmation shown when deleting an existing note is styled using the black-and-white palette instead of indigo/purple.
 
-### REQ-NFR-001 · draft · source: requirements:NFR-001
+**Related:** US-008, US-014
 
-Privacy NFR: notes are visible only to the single signed-in owner; no sharing, collaboration or multi-user access.
+### US-009 · draft · source: requirements:US-009
 
-The app serves exactly one person keeping private notes. Applies to US-002 (auth-gated notes screens) and US-012 (app's own private data store).
+All notes appear in a single list ordered newest-first by last-updated timestamp; no tags, labels, folders or notebooks are presented.
 
-**Related:** US-002, US-012
+AC-017: notes list shows all notes ordered by last-updated timestamp, most recent first. AC-018: editing a note so its timestamp changes moves it to the top of the list. AC-019: no tags, labels, folders or notebooks are presented (organising features out of scope).
 
-### REQ-NFR-002 · draft · source: requirements:NFR-002
+**Related:** US-005, US-006, US-010, US-016
 
-Security NFR: valid login required for all note access; logout ends the session.
+### US-010 · draft · source: requirements:US-010
 
-Every notes screen requires valid authentication; unauthenticated attempts redirect to login; logging out ends the session so notes require a fresh login to reach again. Applies to US-001 and US-002.
+A search box filters the notes list by matching typed text against both title and body; no-match state is shown with a way to clear the search.
 
-**Related:** US-001, US-002
+AC-020: typing a term filters the list to notes whose title or body text matches. AC-021: when no notes match, an empty-result indication is shown and the search box allows clearing the term to return to the full list.
 
-### REQ-NFR-003 · draft · source: requirements:NFR-003
+**Related:** US-009, US-016
 
-Usability NFR: no work lost -- auto-save or explicit save must persist the latest content.
+### US-016 · draft · source: requirements:US-016
 
-Edits must be saved automatically or via an explicit save so typed work is never lost; the most recently saved content must be present after reloading the app. Applies to US-007.
+Notes list and search box are restyled with the black-and-white theme.
 
-**Related:** US-007
+AC-030: list rows, highlights and the search box use the black-and-white palette instead of indigo/purple. AC-031: the empty-result indication is styled using the new monochrome palette.
 
-### REQ-NFR-004 · draft · source: requirements:NFR-004
+**Related:** US-009, US-010, US-014
 
-Usability NFR: search filters the list live as the user types, matching title and body.
+### US-011 · draft · source: requirements:US-011
 
-The notes list updates to match the search term as it is typed, filtering on both title and body text. Applies to US-010.
+The app adapts to desktop and mobile browser screen sizes; there is no native mobile or desktop app, only a responsive web app.
 
-**Related:** US-010
+AC-022: desktop browser view renders the notes list, editor and login usably and readably at desktop widths. AC-023: mobile browser view adapts layout to smaller screens, and all core actions remain usable without a native app.
 
-### REQ-NFR-005 · draft · source: requirements:NFR-005
+**Related:** US-020
 
-Compatibility NFR: responsive web app usable and readable on both desktop and mobile browsers.
+### US-012 · draft · source: requirements:US-012
 
-All core actions must be available without a native app, on both desktop and mobile browser widths. Applies to US-011.
+Notes are stored in the app's own database with no sync or export to external services such as Evernote or Google Keep.
+
+AC-024: logging out and back in later retrieves notes from the app's own database, shown as before. AC-025: no option to sync with or export to external services is offered in this version.
 
 **Related:** US-011
 
-### REQ-NFR-006 · draft · source: requirements:NFR-006
+### US-013 · draft · source: requirements:US-013
 
-Availability NFR: notes persist reliably across sessions via the app's own database.
+The app is free to use, with no payment, billing, subscription or paywall ever presented.
 
-Notes are kept in the app's own database and retrieved reliably across sessions, so saved notes reappear after logging out and back in later. Applies to US-012.
+AC-026: no payment, billing, subscription or paywall screen is presented at any point while using any feature of the app.
 
-**Related:** US-012
+### US-014 · draft · source: requirements:US-014
 
-### REQ-NFR-007 · draft · source: requirements:NFR-007
+Global design tokens (colors, backgrounds, borders) are switched from the old indigo/purple scheme to a black-and-white monochrome palette across the app.
 
-Availability NFR (accepted risk): no version history or note recovery after deletion.
+AC-027: shared style/theme definitions are updated so all shared color variables resolve to black, white and greyscale values, with no indigo/purple values remaining in the shared theme.
 
-The app keeps no version history; once deleted, a note cannot be recovered from within the app. This loss of recoverability is an explicitly accepted risk. Applies to US-008.
+**Related:** US-015, US-016, US-017, US-018, US-019, US-020
 
-**Related:** US-008
+### US-020 · draft · source: requirements:US-020
 
-### REQ-NFR-008 · draft · source: requirements:NFR-008
+The restyled black-and-white theme is checked for contrast and visual consistency on both desktop and mobile browser widths across all screens.
 
-Scalability NFR (accepted risk): built for exactly one user, not multi-tenant.
+AC-037: after login, notes list, editor, view and delete confirmation are restyled, each is checked at desktop and mobile widths to confirm no indigo/purple colors remain and text/background contrast is clearly readable on every screen.
 
-The app is deliberately single-user scale only; supporting multiple concurrent users, teams, or roles is not provided. Applies to the whole system.
+**Related:** US-011, US-014, US-015, US-016, US-017, US-018, US-019
+
+- ⚠ This is a verification/QA activity described at requirements time; no actual verification results exist yet since testing has not started.
 <!-- sdlc:auto:end narrative -->
 
 <!-- sdlc:auto:start summary -->
-**Requirements version:** v1  
+**Requirements version:** v2  
 **Delivery scope:** lightweight  
-**Approved:** 2026-10-26
+**Approved:** 2026-10-27
 
 **Capabilities in scope:** Single-user login to protect access, Create a note with a title and rich-text body, Rich-text formatting (bold, lists, headings, links), View a note, Edit a note, Delete a note, Auto-save with a last-updated timestamp, Notes list ordered newest-first, Search notes by title and body text, Responsive layout for desktop and mobile browsers, Email-and-password login for the single user, no public sign-up, Free app with no payments, billing or subscriptions, Notes kept in the app's own store, no sync to external services
 
@@ -233,6 +238,17 @@ Assumption: Access is protected by a single-user login (email + password); no pu
 | AC-004 | I am not logged in | I attempt to open any notes screen directly (list, view or editor) | I am redirected to the login page instead of seeing any note content |
 | AC-005 | I am logged in | I choose to log out | my session ends and I am returned to the login page, and reaching notes screens again requires logging in |
 
+### US-015: Apply black-and-white theme to the login screen
+
+**Priority:** low
+
+> As a sole owner of the notes app, I want the login page styled with the new black-and-white theme, so that the first screen I see matches the new look.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AC-028 | I am on the login page | the page renders | its background, text and input styling use the black-and-white palette instead of indigo/purple |
+| AC-029 | I submit incorrect credentials on the login page | the error message is shown | the error message is styled using the new monochrome palette and remains clearly legible |
+
 ## EPIC-002: Note Creation & Rich-Text Editing
 
 The user can create a note with a title and a rich-text body. The body supports formatting including bold, lists, headings and links. File and image attachments are explicitly out of scope.
@@ -258,6 +274,17 @@ The user can create a note with a title and a rich-text body. The body supports 
 |---|---|---|---|
 | AC-008 | I am editing a note body | I apply bold, a list, a heading or a link to selected text | the formatting is shown in the editor and retained when the note is saved and reopened |
 | AC-009 | the understanding excludes attachments | I am editing a note | the editor offers no option to add file or image attachments |
+
+### US-017: Apply black-and-white theme to the note creation editor and formatting toolbar
+
+**Priority:** low
+
+> As a logged-in user, I want the note editor and its bold/list/heading/link toolbar styled with the new black-and-white theme, so that creating and formatting notes matches the new look.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AC-032 | I open a new note editor | the editor renders | the title field, body field and toolbar use the black-and-white palette instead of indigo/purple |
+| AC-033 | I apply bold, a list, a heading or a link in the editor | the formatting is shown | active/selected toolbar states are rendered using the new monochrome palette |
 
 ## EPIC-003: View, Edit & Delete Notes
 
@@ -308,6 +335,27 @@ Assumption: Core actions are create, view, edit and delete a note; notes save au
 | AC-015 | I am viewing or selecting an existing note | I confirm deletion of that note | the note is removed and no longer appears in my notes list or search results |
 | AC-016 | the understanding states there is no version history | a note has been deleted | it cannot be recovered from within the app |
 
+### US-018: Apply black-and-white theme to viewing and editing an existing note
+
+**Priority:** low
+
+> As a logged-in user, I want the note view and edit screens styled with the new black-and-white theme, so that reading and updating a saved note matches the new look.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AC-034 | I open a saved note to view it | the note content renders | the title, body and formatting are displayed using the black-and-white palette instead of indigo/purple |
+| AC-035 | I am editing an existing note | the edit screen renders | it uses the same black-and-white palette as the view screen |
+
+### US-019: Apply black-and-white theme to the delete confirmation
+
+**Priority:** low
+
+> As a logged-in user, I want the delete confirmation styled with the new black-and-white theme, so that deleting a note matches the new look.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AC-036 | I choose to delete an existing note | the delete confirmation is shown | it is styled using the black-and-white palette instead of indigo/purple |
+
 ## EPIC-004: Notes List & Search
 
 All notes appear in a single list ordered newest-first by last-updated timestamp. A search box finds notes by matching text in both the title and the body. There are no tags, labels, folders or notebooks.
@@ -336,6 +384,17 @@ Assumption: Search matches against both note title and body text. Organising fea
 |---|---|---|---|
 | AC-020 | I have notes whose title or body contains a given term | I type that term into the search box | the list is filtered to notes whose title or body text matches the term |
 | AC-021 | no notes match the search term | the search returns no results | an empty-result indication is shown and the search box lets me clear the term to return to the full list |
+
+### US-016: Apply black-and-white theme to the notes list and search box
+
+**Priority:** low
+
+> As a logged-in user, I want the notes list and search box styled with the new black-and-white theme, so that browsing and searching my notes matches the new look.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AC-030 | I have multiple saved notes | the notes list renders | list rows, highlights and the search box use the black-and-white palette instead of indigo/purple |
+| AC-031 | no notes match my search term | the empty-result indication is shown | it is styled using the new monochrome palette |
 
 ## EPIC-005: Responsive Web Platform & Data Storage
 
@@ -374,4 +433,24 @@ Assumptions: Delivered as a responsive web application for desktop and mobile br
 | ID | Given | When | Then |
 |---|---|---|---|
 | AC-026 | the understanding states the app is free | I use any feature of the app | no payment, billing, subscription or paywall screen is presented at any point |
+
+### US-014: Define global black-and-white theme tokens
+
+**Priority:** low
+
+> As a sole owner of the notes app, I want the app's visual design tokens (colors, backgrounds, borders) switched to a black-and-white monochrome palette, so that the whole app has a consistent, high-contrast look instead of the old indigo/purple scheme.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AC-027 | the app's shared style/theme definitions currently use dark indigo/purple colors | the theme tokens are updated | all shared color variables resolve to black, white and greyscale values and no indigo/purple values remain in the shared theme |
+
+### US-020: Verify black-and-white theme consistency across desktop and mobile browsers
+
+**Priority:** low
+
+> As a sole owner of the notes app, I want the new black-and-white theme checked for contrast and consistency on desktop and mobile browser widths, so that all screens remain readable and consistently styled after the restyle.
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| AC-037 | the login, notes list, editor, view and delete confirmation have been restyled | each is checked at desktop and mobile browser widths | no indigo/purple colors remain and text/background contrast is clearly readable on every screen |
 <!-- sdlc:auto:end epics -->
