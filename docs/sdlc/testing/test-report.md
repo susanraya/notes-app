@@ -4,14 +4,14 @@
 
 <!-- sdlc:auto:start e2e -->
 **Status:** no_tests
-**Target:** Sprint 2 test gate, round 1
+**Target:** Sprint 3 test gate, round 3
 **Date:** 2026-10-27
 
 Passed: 0 · Failed: 0 · Skipped: 0 · Flaky: 0 · Total: 0
 <!-- sdlc:auto:end e2e -->
 
 <!-- sdlc:auto:start unit -->
-**Coverage:** backend 99.1% · frontend 86.3%
+**Coverage:** backend 99.1% · frontend 91.2%
 
 **Test cases:** — / — written
 
@@ -21,6 +21,13 @@ Passed: 0 · Failed: 0 · Skipped: 0 · Flaky: 0 · Total: 0
 <!-- sdlc:auto:end unit -->
 
 <!-- sdlc:auto:start dev-checks -->
+### Sprint 3
+
+| Step | Status | Ticket | Finished |
+|---|---|---|---|
+| run_checks | succeeded | — | 2026-10-27 |
+| write_tests | succeeded | US-013 | 2026-10-27 |
+
 ### Sprint 2
 
 | Step | Status | Ticket | Finished |

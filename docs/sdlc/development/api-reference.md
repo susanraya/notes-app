@@ -6,13 +6,13 @@
 | Method | Path | Handler | Source | Summary |
 |---|---|---|---|---|
 | POST | /auth/login | login | `backend/app/routers/auth.py:26` | — |
-| POST | /auth/logout | logout | `backend/app/routers/auth.py:39` | — |
+| POST | /auth/logout | logout | `backend/app/routers/auth.py:40` | — |
 | GET | /health | health | `backend/app/main.py:44` | Liveness probe, and the only route here that is not a stub. |
 | GET | /notes | list_notes | `backend/app/routers/notes.py:31` | — |
-| POST | /notes | create_note | `backend/app/routers/notes.py:40` | — |
-| DELETE | /notes/{note_id} | delete_note | `backend/app/routers/notes.py:75` | — |
-| GET | /notes/{note_id} | get_note | `backend/app/routers/notes.py:50` | — |
-| PUT | /notes/{note_id} | update_note | `backend/app/routers/notes.py:62` | — |
+| POST | /notes | create_note | `backend/app/routers/notes.py:41` | — |
+| DELETE | /notes/{note_id} | delete_note | `backend/app/routers/notes.py:76` | — |
+| GET | /notes/{note_id} | get_note | `backend/app/routers/notes.py:51` | — |
+| PUT | /notes/{note_id} | update_note | `backend/app/routers/notes.py:63` | — |
 <!-- sdlc:auto:end endpoints -->
 
 <!-- sdlc:auto:start drift -->
@@ -30,5 +30,5 @@
 <!-- sdlc:auto:end drift -->
 
 <!-- sdlc:auto:start source -->
-Generated from commit `7c815c5`
+Generated from commit `fcba026`
 <!-- sdlc:auto:end source -->

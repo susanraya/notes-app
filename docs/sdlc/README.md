@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 a simple notes app
 
-**Documentation version:** v9
+**Documentation version:** v10
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ a simple notes app
 |---|---|
 | [Requirements](requirements/README.md) | v2 approved |
 | [Architecture](architecture/README.md) | 11 entries |
-| [Development](development/README.md) | 2 entries |
+| [Development](development/README.md) | 10 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -26,12 +26,12 @@ a simple notes app
 | [Developer guide](development/developer-guide.md) | generated |
 | [API reference](development/api-reference.md) | 8 routes |
 | [Test report](testing/test-report.md) | no_tests |
-| [Tests](testing/test-cases.md) | 133 tests |
+| [Tests](testing/test-cases.md) | 201 tests |
 | [Deployment guide](deployment/deployment-guide.md) | not deployed yet |
 | [Runbook](deployment/runbook.md) | not deployed yet |
 | [Release notes](deployment/release-notes.md) | 0 releases |
 | [Traceability matrix](traceability-matrix.md) | 20 requirements |
-| [Changelog](CHANGELOG.md) | 9 versions |
+| [Changelog](CHANGELOG.md) | 10 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -55,9 +55,10 @@ a simple notes app
 
 ### Development
 
-- Plan input does not explicitly state which backlog items are assigned to which sprint; approximate groupings can be inferred from story-point totals matching each sprint's capacity of 20, but this mapping is not confirmed by the input and should not be treated as authoritative.
-- Development run status is reported as 'completed', yet ticket-level delivery data (status, commit) is recorded for only 1 of the 20 stories (US-014) and none of the 4 tasks under US-001 -- this is a discrepancy between the reported run status and the evidence available.
-- No ticket-level development data (status/commit) was provided for the 19 other planned stories (US-001-US-013, US-015-US-020) or the 4 tasks under US-001, so their implementation status cannot be documented here.
+- Plan input lists sprints and backlog items separately but does not explicitly map which items belong to which sprint; sprint-to-item assignment above is based only on each sprint's stated goal text, not an explicit mapping field.
+- No commit hash/reference recorded for this tested ticket.
+- Development run status says 'completed' but 12 stories and 4 sub-tasks from the approved plan have no corresponding ticket data -- unclear whether they were built and simply not reported, skipped, or still pending.
+- All 8 reported tickets show commit=(none), so there is no code-level evidence (commit/PR reference) backing any of the 'tested' statuses in this input.
 
 ### Testing
 

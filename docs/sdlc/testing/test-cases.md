@@ -3,9 +3,9 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start summary -->
-133 tests · Passed 107 · Failed 0 · Skipped 0 · Not run 26
+201 tests · Passed 154 · Failed 0 · Skipped 0 · Not run 47
 
-Acceptance criteria covered: 20/37 · passing: 7/37
+Acceptance criteria covered: 33/37 · passing: 16/37
 <!-- sdlc:auto:end summary -->
 
 <!-- sdlc:auto:start tests -->
@@ -39,6 +39,12 @@ Acceptance criteria covered: 20/37 · passing: 7/37
 | AC-001 | Login screen > [AC-001] submits correct credentials, stores the token and navigates to notes | Unit | Passed | `frontend/src/screens/Login.test.tsx` |
 | AC-002 | Login screen > [AC-002] keeps the user on login and shows an error when credentials are rejected | Unit | Passed | `frontend/src/screens/Login.test.tsx` |
 | AC-003 | Login screen > [AC-003] offers no sign-up or account-creation link | Unit | Passed | `frontend/src/screens/Login.test.tsx` |
+| AC-022 | Login screen > [AC-022] the page root has a sensible max content width and never forces a fixed width wider than the viewport | Unit | Passed | `frontend/src/screens/Login.test.tsx` |
+| AC-023 | Login screen > [AC-023] the Log in button meets the 44px minimum touch target at every width | Unit | Passed | `frontend/src/screens/Login.test.tsx` |
+| AC-023 | Login screen > [AC-023] the two-column layout only applies from the lg breakpoint, so it reflows to one column below it | Unit | Passed | `frontend/src/screens/Login.test.tsx` |
+| AC-028 | Login screen > [AC-028] on render, the page background, labels, inputs and primary button are all greyscale | Unit | Passed | `frontend/src/screens/Login.test.tsx` |
+| AC-029 | Login screen > [AC-029] field-level validation errors use the same monochrome treatment | Unit | Passed | `frontend/src/screens/Login.test.tsx` |
+| AC-029 | Login screen > [AC-029] the incorrect-credentials error banner renders in greyscale with sufficient contrast against its background | Unit | Passed | `frontend/src/screens/Login.test.tsx` |
 | AC-001 | test_ac001_login_with_correct_credentials_returns_token | Integration | Passed | `backend/tests/integration/test_auth.py` |
 | AC-002 | test_ac002_error_body_does_not_reveal_which_field_was_wrong | Integration | Passed | `backend/tests/integration/test_auth.py` |
 | AC-002 | test_ac002_login_with_wrong_email_returns_generic_401 | Integration | Passed | `backend/tests/integration/test_auth.py` |
@@ -71,21 +77,48 @@ Acceptance criteria covered: 20/37 · passing: 7/37
 | AC-011 | Note screen > [AC-011] editing an existing note's title sends both the new title and the unchanged body in the save | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
 | AC-011 | Note screen > [AC-011] reopening a note after it was edited shows the content the server now stores | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
 | AC-012 | Note screen > [AC-012] after an edit is saved, the displayed last-updated stamp moves to the new updated_at from the server | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-022 | Note screen > [AC-022] at 1280px the screen root clips overflow and the content column, toolbar and status row stay within a bounded, centred width | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-023 | Note screen > [AC-023] at 375px the back, delete and all four formatting toolbar controls meet the 44px touch-target minimum | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-023 | Note screen > [AC-023] at 375px the delete-confirmation dialog's title wraps and its Cancel / Delete controls stack full-width at >=44px tall | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-023 | Note screen > [AC-023] at 375px the title, toolbar and body carry the classes that let them reflow to a narrow screen instead of overflowing it | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
 | AC-025 | Note screen > [AC-025] offers no sync, import, or export option | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-032 | Note screen > [AC-032] ProseMirror content styles (headings, bold, lists, links, placeholder) use monochrome values | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-032 | Note screen > [AC-032] the title field, body field and formatting toolbar render in greyscale with no indigo/purple remaining | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-033 | Note screen > [AC-033] the active bold toolbar state renders in monochrome and is visually distinct from inactive | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-033 | Note screen > [AC-033] the active heading toolbar state renders in monochrome and is visually distinct from inactive | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-033 | Note screen > [AC-033] the active link toolbar state renders in monochrome and is visually distinct from inactive | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-033 | Note screen > [AC-033] the active list toolbar state renders in monochrome and is visually distinct from inactive | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-034 | Note screen > [AC-034] opening a saved note renders its title, body and applied formatting in the black-and-white palette with no indigo/purple remaining | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| AC-035 | Note screen > [AC-035] the edit screen for an existing note uses the identical palette tokens as the view state | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
 | — | Note screen > opens an existing note via GET /notes/{id} and renders its stored body | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
 | — | Note screen > saving an existing note calls PUT /notes/{id} | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| — | Note screen > the formatting toolbar wraps (reflows into additional rows) rather than overflowing at narrow widths | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| — | Note screen > the load-error message for a saved note renders in the monochrome palette | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
+| — | Note screen > the status chip, save/last-updated indicator, back and delete affordances render in the monochrome palette for a saved note | Unit | Passed | `frontend/src/screens/Note.test.tsx` |
 | AC-004 | Notes screen > [AC-004] a 401 while loading notes clears the token and never shows note content | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
 | AC-006 | Notes screen > [AC-006] clicking New note navigates to the note editor | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| AC-020 | Notes screen > [AC-020] typing a term in the search box calls GET /notes?q= and filters the list to matches | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| AC-021 | Notes screen > [AC-021] shows an empty-result indication when no notes match, with a clear control that returns the full list | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| AC-022 | Notes screen > [AC-022] the list column has a sensible max content width that keeps it readable at 1280px | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| AC-022 | Notes screen > [AC-022] the top controls reflow to a single column below the sm breakpoint | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| AC-023 | Notes screen > [AC-023] New note, search and clear-search controls each meet the 44px minimum touch target | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| AC-023 | Notes screen > [AC-023] the per-row delete control meets the 44px minimum touch target | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
 | AC-024 | Notes screen > [AC-024] renders notes fetched from GET /notes with no seeded sample data | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
 | AC-024 | Notes screen > [AC-024] shows an empty state when there are no notes | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
 | AC-025 | Notes screen > [AC-025] offers no sync, import, or export option | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| AC-030 | Notes screen > [AC-030] dividers and the clear-search control render in the monochrome palette | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| AC-030 | Notes screen > [AC-030] the search box, row text and hover-highlight colour are all greyscale with no indigo/purple/violet present | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| AC-031 | Notes screen > [AC-031] the no-results indication for a search term renders in greyscale text with a legible clear-search action | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| — | Notes screen > debounces search requests so rapid keystrokes do not each trigger a fetch | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
 | — | Notes screen > deletes a note and removes it from the list | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| — | Notes screen > discards an in-flight response for a stale search term | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
+| — | Notes screen > shows a retry affordance on a failed search and never blanks the existing list | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
 | — | Notes screen > shows an error state and can retry when the list fails to load | Unit | Passed | `frontend/src/screens/Notes.test.tsx` |
-| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[delete-/57885c5a-500c-4002-8f8c-6bbec471eaee-None] | Integration | Passed | `backend/tests/integration/test_notes.py` |
+| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[delete-/6d8f30ba-a751-4d88-bdae-31cf8083fd0a-None] | Integration | Passed | `backend/tests/integration/test_notes.py` |
 | AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[get--None] | Integration | Passed | `backend/tests/integration/test_notes.py` |
-| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[get-/f7035f12-a4c2-42e2-ab04-a051a36353f5-None] | Integration | Passed | `backend/tests/integration/test_notes.py` |
+| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[get-/45db213d-cdcd-4091-aab9-069a7e0a54a0-None] | Integration | Passed | `backend/tests/integration/test_notes.py` |
 | AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[post--json_body1] | Integration | Passed | `backend/tests/integration/test_notes.py` |
-| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[put-/f9d07bb4-1cea-4f2b-815b-2cb551f046ea-json_body3] | Integration | Passed | `backend/tests/integration/test_notes.py` |
+| AC-004 | test_ac004_notes_endpoints_reject_requests_without_a_token[put-/7ec423c0-9de6-4126-9c29-f306ca3a257b-json_body3] | Integration | Passed | `backend/tests/integration/test_notes.py` |
 | AC-007 | test_ac007_delete_note_removes_it | Integration | Passed | `backend/tests/integration/test_notes.py` |
 | AC-007 | test_ac007_delete_unknown_note_id_returns_404 | Integration | Passed | `backend/tests/integration/test_notes.py` |
 | AC-007 | test_ac007_get_note_by_id_returns_it | Integration | Passed | `backend/tests/integration/test_notes.py` |
@@ -156,8 +189,60 @@ Acceptance criteria covered: 20/37 · passing: 7/37
 
 | Criteria | Test | Level | Result | File |
 |---|---|---|---|---|
-| — | the login screen's body background and primary button colours are greyscale, with no purple anywhere | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
-| — | the notes screen's body background and primary button colours are greyscale, with no purple anywhere | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+| AC-029 | [AC-029] a wrong-credentials login shows a monochrome, legible error message | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+| AC-031 | [AC-031] the no-results indication for an unmatched search term is monochrome | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+| — | background, text and input computed colours are greyscale, with no indigo/purple present | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+| — | bold, list, heading and link each become monochrome-but-distinguishable once applied | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+| — | dialog background, heading, description and buttons are monochrome with sufficient contrast | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+| — | list rows, highlight accents and the search box use monochrome computed colours | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+| — | title and body colours are identical before and after making an edit | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+| — | title field, body field and toolbar computed colours are monochrome with no indigo/purple | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+| — | title, body and formatted content are monochrome on reopen | E2E | Not run yet | `frontend/e2e/theme-monochrome.spec.ts` |
+
+## Sprint 3
+
+### US-010: Search notes by title and body
+
+| Criteria | Test | Level | Result | File |
+|---|---|---|---|---|
+| AC-020 | test_ac020_q_is_case_insensitive | Integration | Passed | `backend/tests/integration/test_notes_search.py` |
+| AC-020 | test_ac020_q_matches_notes_by_body_only | Integration | Passed | `backend/tests/integration/test_notes_search.py` |
+| AC-020 | test_ac020_q_matches_notes_by_title_only | Integration | Passed | `backend/tests/integration/test_notes_search.py` |
+| AC-020 | test_ac020_q_with_no_matches_returns_empty_list | Integration | Passed | `backend/tests/integration/test_notes_search.py` |
+| AC-021 | test_ac021_absent_q_returns_full_list_newest_updated_first | Integration | Passed | `backend/tests/integration/test_notes_search.py` |
+| AC-021 | test_ac021_empty_q_returns_full_list_newest_updated_first | Integration | Passed | `backend/tests/integration/test_notes_search.py` |
+| AC-021 | test_ac021_whitespace_only_q_is_treated_as_empty | Integration | Passed | `backend/tests/integration/test_notes_search.py` |
+| — | test_ac_q_search_without_token_returns_401 | Integration | Passed | `backend/tests/integration/test_notes_search.py` |
+| AC-020 | [AC-020] search by title matches independently of case | E2E | Not run yet | `frontend/e2e/notes-search.spec.ts` |
+| — | typing a term filters the visible list to matching notes, a non-matching term shows the empty-result indication, and clearing it restores the full list | E2E | Not run yet | `frontend/e2e/notes-search.spec.ts` |
+
+### US-011: Use the app on desktop and mobile browsers
+
+| Criteria | Test | Level | Result | File |
+|---|---|---|---|---|
+| — | login screen reflows without horizontal overflow, and logging in is clickable with a touch-sized target | E2E | Not run yet | `frontend/e2e/responsive.spec.ts` |
+| — | login screen renders without horizontal overflow and with core controls visible | E2E | Not run yet | `frontend/e2e/responsive.spec.ts` |
+| — | note editor reflows without horizontal overflow, and its delete control is clickable with a touch-sized target | E2E | Not run yet | `frontend/e2e/responsive.spec.ts` |
+| — | note editor renders without horizontal overflow and with core controls visible | E2E | Not run yet | `frontend/e2e/responsive.spec.ts` |
+| — | notes list reflows without horizontal overflow, and new note / search / open note / delete are clickable with touch-sized targets | E2E | Not run yet | `frontend/e2e/responsive.spec.ts` |
+| — | notes list renders without horizontal overflow and with core controls visible | E2E | Not run yet | `frontend/e2e/responsive.spec.ts` |
+
+### US-013: Use the app free of charge
+
+| Criteria | Test | Level | Result | File |
+|---|---|---|---|---|
+| AC-026 | test_ac026_a_full_crud_cycle_never_returns_402_payment_required | Integration | Passed | `backend/tests/integration/test_no_billing.py` |
+| AC-026 | test_ac026_an_unknown_note_id_returns_plain_404_not_a_payment_gate | Integration | Passed | `backend/tests/integration/test_no_billing.py` |
+| AC-026 | test_ac026_login_response_carries_no_payment_or_subscription_field | Integration | Passed | `backend/tests/integration/test_no_billing.py` |
+| AC-026 | test_ac026_note_schema_carries_no_payment_or_subscription_field | Integration | Passed | `backend/tests/integration/test_no_billing.py` |
+| AC-026 | test_ac026_openapi_document_exposes_no_payment_billing_subscription_or_paywall_endpoint | Integration | Passed | `backend/tests/integration/test_no_billing.py` |
+| AC-026 | test_ac026_openapi_document_schemas_carry_no_plan_tier_quota_or_billing_field | Integration | Passed | `backend/tests/integration/test_no_billing.py` |
+| AC-026 | [AC-026] a failed login attempt does not surface a payment or subscription prompt | E2E | Not run yet | `frontend/e2e/no-paywall.spec.ts` |
+| AC-026 | [AC-026] creating, formatting, auto-saving and deleting a note never presents a payment, billing, subscription or paywall screen | E2E | Not run yet | `frontend/e2e/no-paywall.spec.ts` |
+| AC-026 | [AC-026] no payment, billing or subscription endpoint can be reached through the running API, and a full CRUD cycle never returns 402 Payment Required | E2E | Not run yet | `frontend/e2e/no-paywall.spec.ts` |
+| AC-026 | [AC-026] searching notes presents no payment, billing, subscription or paywall wording | E2E | Not run yet | `frontend/e2e/no-paywall.spec.ts` |
+| AC-026 | [AC-026] the login screen presents no payment, billing, subscription or paywall wording | E2E | Not run yet | `frontend/e2e/no-paywall.spec.ts` |
+| AC-026 | [AC-026] the notes list presents no payment, billing, subscription or paywall wording | E2E | Not run yet | `frontend/e2e/no-paywall.spec.ts` |
 
 ## Project setup
 
