@@ -70,7 +70,9 @@ test("[AC-008] bold, a bullet list, a heading and a link applied to the body sur
   await deleteOpenNote(page);
 });
 
-test("[AC-009] no file or image attachment control is present on the note editor", async ({ page }) => {
+test("[AC-009] no file or image attachment control is present on the note editor", async ({
+  page,
+}) => {
   await login(page);
   await page.goto("/note");
 
@@ -83,7 +85,9 @@ test("[AC-009] no file or image attachment control is present on the note editor
   await expect(toolbar.getByRole("button")).toHaveCount(4);
 });
 
-test("[AC-010] selecting a note from the list renders its title and formatted body", async ({ page }) => {
+test("[AC-010] selecting a note from the list renders its title and formatted body", async ({
+  page,
+}) => {
   await login(page);
 
   await page.getByRole("button", { name: /new note/i }).click();

@@ -20,9 +20,7 @@ _OWNER_PASSWORD = os.environ["OWNER_PASSWORD"]
 
 
 def test_ac001_login_with_correct_credentials_returns_token() -> None:
-    response = client.post(
-        "/auth/login", json={"email": _OWNER_EMAIL, "password": _OWNER_PASSWORD}
-    )
+    response = client.post("/auth/login", json={"email": _OWNER_EMAIL, "password": _OWNER_PASSWORD})
 
     assert response.status_code == 200
     body = response.json()
@@ -52,9 +50,7 @@ def test_ac002_error_body_does_not_reveal_which_field_was_wrong() -> None:
     wrong_email = client.post(
         "/auth/login", json={"email": "nobody@example.com", "password": _OWNER_PASSWORD}
     )
-    wrong_password = client.post(
-        "/auth/login", json={"email": _OWNER_EMAIL, "password": "nope"}
-    )
+    wrong_password = client.post("/auth/login", json={"email": _OWNER_EMAIL, "password": "nope"})
 
     assert wrong_email.json() == wrong_password.json()
 
@@ -93,9 +89,7 @@ def test_ac004_notes_endpoint_rejects_expired_token() -> None:
 
 
 def test_ac005_logout_with_valid_token_returns_204() -> None:
-    login = client.post(
-        "/auth/login", json={"email": _OWNER_EMAIL, "password": _OWNER_PASSWORD}
-    )
+    login = client.post("/auth/login", json={"email": _OWNER_EMAIL, "password": _OWNER_PASSWORD})
     token = login.json()["access_token"]
 
     response = client.post("/auth/logout", headers={"Authorization": f"Bearer {token}"})
@@ -110,9 +104,7 @@ def test_ac005_logout_without_token_returns_401() -> None:
 
 
 def test_notes_endpoint_accepts_valid_token() -> None:
-    login = client.post(
-        "/auth/login", json={"email": _OWNER_EMAIL, "password": _OWNER_PASSWORD}
-    )
+    login = client.post("/auth/login", json={"email": _OWNER_EMAIL, "password": _OWNER_PASSWORD})
     token = login.json()["access_token"]
 
     response = client.get("/notes", headers={"Authorization": f"Bearer {token}"})

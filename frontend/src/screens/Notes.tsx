@@ -17,6 +17,7 @@ export interface NoteOut {
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const SEARCH_DEBOUNCE_MS = 300;
 
 const toRGB = (hex: string): string => {
   const h = String(hex || "").replace("#", "");
@@ -32,6 +33,7 @@ const toRGB = (hex: string): string => {
 };
 
 const N_RGB = toRGB(brand.neutralColor);
+const PRIMARY_RGB = toRGB(brand.primaryColor);
 
 const T = {
   bg: brand.backgroundColor,
@@ -39,14 +41,33 @@ const T = {
   surfaceUp: `rgba(${N_RGB}, 0.09)`,
   hairline: `rgba(${N_RGB}, 0.18)`,
   hairlineSoft: `rgba(${N_RGB}, 0.1)`,
-  text: "rgba(255, 255, 255, 0.93)",
+  text: `rgba(${PRIMARY_RGB}, 0.93)`,
   muted: brand.neutralColor,
   faint: `rgba(${N_RGB}, 0.7)`,
   accent: brand.primaryColor,
-  accentSoft: `rgba(${toRGB(brand.primaryColor)}, 0.16)`,
+  accentSoft: `rgba(${PRIMARY_RGB}, 0.16)`,
   danger: brand.accentColor,
   dangerSoft: `rgba(${toRGB(brand.accentColor)}, 0.14)`,
+  hoverBg: `rgba(${N_RGB}, 0.08)`,
   radius: brand.radius,
+};
+
+// Shared, literal monochrome values for the delete-confirmation dialog.
+// These are duplicated verbatim in Note.tsx so both dialogs render
+// identically rather than drifting from each screen's own derived palette.
+const DIALOG = {
+  backdrop: "rgba(0, 0, 0, 0.78)",
+  surface: "rgb(18, 18, 18)",
+  border: "rgba(154, 154, 154, 0.25)",
+  title: "#ffffff",
+  desc: "rgba(154, 154, 154, 0.85)",
+  cancelBorder: "rgba(154, 154, 154, 0.3)",
+  cancelText: "#e5e5e5",
+  deleteBg: "#3a3a3a",
+  deleteText: "#ffffff",
+  errorBg: "rgba(154, 154, 154, 0.12)",
+  errorBorder: "rgba(154, 154, 154, 0.4)",
+  errorText: "#f5f5f5",
 };
 
 const HEAD = `${brand.fontHeading}, ui-sans-serif, system-ui, -apple-system, sans-serif`;
@@ -88,6 +109,7 @@ export default function Screen() {
   const navigate = useNavigate();
   const [notes, setNotes] = React.useState<NoteOut[] | null>(null);
   const [loadError, setLoadError] = React.useState<string | null>(null);
+  const [searchError, setSearchError] = React.useState<string | null>(null);
   const [query, setQuery] = React.useState("");
   const [pending, setPending] = React.useState<NoteOut | null>(null);
   const [deleting, setDeleting] = React.useState(false);
@@ -99,21 +121,50 @@ export default function Screen() {
   const triggerRef = React.useRef<HTMLElement | null>(null);
   const timers = React.useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const loadNotes = React.useCallback(async () => {
-    setLoadError(null);
+  // Only the most recently issued request is allowed to update state: a
+  // response for a term the user has since changed away from is discarded.
+  const requestSeq = React.useRef(0);
+
+  const fetchNotes = React.useCallback(async (term: string) => {
+    const seq = ++requestSeq.current;
     try {
-      const data = await apiFetch<NoteOut[]>("/notes");
+      const path = term ? `/notes?q=${encodeURIComponent(term)}` : "/notes";
+      const data = await apiFetch<NoteOut[]>(path);
+      if (seq !== requestSeq.current) return; // a newer request has since started
       setNotes(data);
+      setLoadError(null);
+      setSearchError(null);
     } catch {
-      // A 401 is handled by apiFetch itself (clears the token and redirects to
-      // /login); any other failure gets its own retry affordance here.
-      setLoadError("Couldn’t load your notes just now. Try again in a moment.");
+      if (seq !== requestSeq.current) return;
+      // A failed request never blanks whatever list is already on screen.
+      if (term) {
+        setSearchError("Couldn’t search your notes just now. Try again.");
+      } else {
+        setLoadError("Couldn’t load your notes just now. Try again in a moment.");
+      }
     }
   }, []);
 
+  // Initial, unfiltered load.
   React.useEffect(() => {
-    loadNotes();
-  }, [loadNotes]);
+    fetchNotes("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounced server-side search as the query changes. Skips the very first
+  // render so it doesn't duplicate the initial load above.
+  const didMount = React.useRef(false);
+  React.useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true;
+      return undefined;
+    }
+    const term = query.trim();
+    const timer = setTimeout(() => {
+      fetchNotes(term);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [query, fetchNotes]);
 
   React.useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
@@ -136,13 +187,9 @@ export default function Screen() {
     [notes],
   );
 
-  const term = query.trim().toLowerCase();
-  const filtered = React.useMemo(() => {
-    if (!term) return sorted;
-    return sorted.filter(
-      (n) => n.title.toLowerCase().includes(term) || n.body.toLowerCase().includes(term),
-    );
-  }, [sorted, term]);
+  const searching = query.trim().length > 0;
+
+  const clearSearch = () => setQuery("");
 
   const closeDialog = () => {
     setPending(null);
@@ -213,13 +260,34 @@ export default function Screen() {
     borderRadius: T.radius,
     fontFamily: HEAD,
   };
+  const dialogCancelBtn = {
+    backgroundColor: "transparent",
+    color: DIALOG.cancelText,
+    border: `1px solid ${DIALOG.cancelBorder}`,
+    borderRadius: T.radius,
+    fontFamily: HEAD,
+  };
+  const dialogDeleteBtn = {
+    backgroundColor: DIALOG.deleteBg,
+    color: DIALOG.deleteText,
+    borderRadius: T.radius,
+    fontFamily: HEAD,
+    border: `1px solid ${DIALOG.deleteBg}`,
+  };
 
   const total = notes?.length ?? 0;
 
   return (
     <div
       className="min-h-full w-full px-4 py-8 sm:px-8 sm:py-12"
-      style={{ backgroundColor: T.bg, color: T.text, fontFamily: BODY }}
+      style={
+        {
+          backgroundColor: T.bg,
+          color: T.text,
+          fontFamily: BODY,
+          "--qd-hover": T.hoverBg,
+        } as React.CSSProperties
+      }
     >
       <style>{QD_CSS}</style>
 
@@ -284,8 +352,8 @@ export default function Screen() {
               <button
                 type="button"
                 aria-label="Clear search"
-                onClick={() => setQuery("")}
-                className="qd-focus absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center transition-colors"
+                onClick={clearSearch}
+                className="qd-focus absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center transition-colors"
                 style={{ color: T.muted, borderRadius: T.radius }}
               >
                 <X className="h-4 w-4" aria-hidden="true" />
@@ -293,6 +361,36 @@ export default function Screen() {
             ) : null}
           </div>
         </form>
+
+        {searchError ? (
+          <div
+            role="alert"
+            className="mt-4 flex items-center justify-between gap-3 px-4 py-3 text-[14px]"
+            style={{
+              color: T.text,
+              backgroundColor: T.dangerSoft,
+              border: `1px solid ${T.danger}`,
+              borderRadius: T.radius,
+            }}
+          >
+            <span className="flex items-start gap-2">
+              <AlertCircle
+                className="mt-0.5 h-4 w-4 shrink-0"
+                style={{ color: T.danger }}
+                aria-hidden="true"
+              />
+              {searchError}
+            </span>
+            <button
+              type="button"
+              onClick={() => fetchNotes(query.trim())}
+              className="qd-focus shrink-0 px-3 py-1.5 text-[13px] font-semibold"
+              style={quietBtn}
+            >
+              Try again
+            </button>
+          </div>
+        ) : null}
 
         <section className="mt-10" aria-labelledby="notes-list-heading">
           <div
@@ -309,10 +407,10 @@ export default function Screen() {
             <p className="text-[13px]" style={{ ...NUM, color: T.faint }} aria-live="polite">
               {notes === null
                 ? "Loading…"
-                : total === 0
-                  ? "Nothing saved yet"
-                  : term
-                    ? `${filtered.length} of ${total} notes match “${query.trim()}”`
+                : searching
+                  ? `${total} notes match “${query.trim()}”`
+                  : total === 0
+                    ? "Nothing saved yet"
                     : `${total} notes, newest change first`}
             </p>
           </div>
@@ -330,7 +428,7 @@ export default function Screen() {
                   <Button
                     onClick={() => {
                       setNotes(null);
-                      loadNotes();
+                      fetchNotes("");
                     }}
                     className="qd-focus inline-flex min-h-[44px] items-center justify-center gap-2 px-5 text-[15px] font-semibold"
                     style={primaryBtn}
@@ -340,7 +438,7 @@ export default function Screen() {
                 }
               />
             </div>
-          ) : total === 0 ? (
+          ) : total === 0 && !searching ? (
             <div className="py-10">
               <Empty
                 title="Nothing written here yet"
@@ -357,14 +455,31 @@ export default function Screen() {
                 }
               />
             </div>
-          ) : filtered.length === 0 ? null : (
+          ) : total === 0 && searching ? (
+            <div className="qd-row py-12">
+              <Empty
+                title={`No notes match “${query.trim()}”`}
+                description="Clear the search to see all notes. Search looks at both the title and the text of every note."
+                action={
+                  <Button
+                    onClick={clearSearch}
+                    className="qd-focus inline-flex min-h-[44px] items-center justify-center gap-2 px-5 text-[15px] font-semibold"
+                    style={primaryBtn}
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                    Clear search
+                  </Button>
+                }
+              />
+            </div>
+          ) : (
             <ul className="relative m-0 list-none p-0">
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute top-0 bottom-0 w-px"
                 style={{ left: "62px", backgroundColor: T.accentSoft }}
               />
-              {filtered.map((note) => {
+              {sorted.map((note) => {
                 const d = new Date(note.updated_at);
                 const preview = stripHtml(note.body);
                 return (
@@ -439,31 +554,12 @@ export default function Screen() {
             </ul>
           )}
         </section>
-
-        {total > 0 && filtered.length === 0 ? (
-          <div className="qd-row py-12">
-            <Empty
-              title={`No notes match “${query.trim()}”`}
-              description="Clear the search to see all notes. Search looks at both the title and the text of every note."
-              action={
-                <Button
-                  onClick={() => setQuery("")}
-                  className="qd-focus inline-flex min-h-[44px] items-center justify-center gap-2 px-5 text-[15px] font-semibold"
-                  style={primaryBtn}
-                >
-                  <X className="h-4 w-4" aria-hidden="true" />
-                  Clear search
-                </Button>
-              }
-            />
-          </div>
-        ) : null}
       </div>
 
       {pending ? (
         <div
           className="qd-backdrop fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.6)" }}
+          style={{ backgroundColor: DIALOG.backdrop }}
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closeDialog();
           }}
@@ -476,22 +572,22 @@ export default function Screen() {
             onKeyDown={onDialogKeyDown}
             className="qd-dialog w-full max-w-md p-6 shadow-2xl"
             style={{
-              backgroundColor: T.bg,
-              border: `1px solid ${T.hairline}`,
+              backgroundColor: DIALOG.surface,
+              border: `1px solid ${DIALOG.border}`,
               borderRadius: T.radius,
             }}
           >
             <h2
               id="delete-title"
               className="text-[20px] leading-snug"
-              style={{ fontFamily: HEAD, fontWeight: 600, color: T.text }}
+              style={{ fontFamily: HEAD, fontWeight: 600, color: DIALOG.title }}
             >
               Delete “{pending.title || "Untitled note"}”?
             </h2>
             <p
               id="delete-desc"
               className="mt-3 text-[15px] leading-relaxed"
-              style={{ color: T.muted }}
+              style={{ color: DIALOG.desc }}
             >
               It is removed permanently and cannot be recovered.
             </p>
@@ -501,15 +597,15 @@ export default function Screen() {
                 role="alert"
                 className="mt-4 flex items-start gap-2 p-3 text-[14px] leading-relaxed"
                 style={{
-                  color: T.text,
-                  backgroundColor: T.dangerSoft,
-                  border: `1px solid ${T.danger}`,
+                  color: DIALOG.errorText,
+                  backgroundColor: DIALOG.errorBg,
+                  border: `1px solid ${DIALOG.errorBorder}`,
                   borderRadius: T.radius,
                 }}
               >
                 <AlertCircle
                   className="mt-0.5 h-4 w-4 shrink-0"
-                  style={{ color: T.danger }}
+                  style={{ color: DIALOG.errorText }}
                   aria-hidden="true"
                 />
                 <span>{dialogError}</span>
@@ -523,7 +619,7 @@ export default function Screen() {
                 onClick={closeDialog}
                 disabled={deleting}
                 className="qd-focus inline-flex min-h-[44px] items-center justify-center px-4 text-[15px] transition-colors disabled:opacity-50"
-                style={quietBtn}
+                style={dialogCancelBtn}
               >
                 Cancel
               </button>
@@ -534,13 +630,7 @@ export default function Screen() {
                 disabled={deleting}
                 aria-busy={deleting ? "true" : "false"}
                 className="qd-focus inline-flex min-h-[44px] items-center justify-center gap-2 px-4 text-[15px] font-semibold transition-opacity hover:opacity-90 disabled:opacity-70"
-                style={{
-                  backgroundColor: T.danger,
-                  color: T.bg,
-                  borderRadius: T.radius,
-                  fontFamily: HEAD,
-                  border: "1px solid transparent",
-                }}
+                style={dialogDeleteBtn}
               >
                 {deleting ? (
                   <>

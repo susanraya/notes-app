@@ -1,14 +1,14 @@
 """Note CRUD endpoints (architecture component: backend / Notes API, US-003-1).
 
 Thin handlers: persistence, ownership scoping and the newest-updated-first
-ordering live in `app/services/notes.py`. Every route here is guarded by
+ordering live in `app/services/notes.py`. Every route here depends on
 `get_current_owner` (US-001, NFR-002): an unauthenticated request never
 reaches a handler body.
 """
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -16,7 +16,7 @@ from app.dependencies import get_current_owner
 from app.schemas import NoteCreate, NoteOut, NoteUpdate
 from app.services import notes as notes_service
 
-router = APIRouter(prefix="/notes", tags=["notes"], dependencies=[Depends(get_current_owner)])
+router = APIRouter(prefix="/notes", tags=["notes"])
 
 
 def _parse_note_id(note_id: str) -> uuid.UUID:
@@ -30,10 +30,11 @@ def _parse_note_id(note_id: str) -> uuid.UUID:
 
 @router.get("", response_model=list[NoteOut])
 async def list_notes(
+    q: str | None = Query(default=None),
     owner: str = Depends(get_current_owner),  # noqa: B008
     db: Session = Depends(get_db),  # noqa: B008
 ) -> list[NoteOut]:
-    notes = notes_service.list_notes(db, owner)
+    notes = notes_service.list_notes(db, owner, q)
     return [NoteOut.model_validate(note) for note in notes]
 
 

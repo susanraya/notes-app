@@ -10,7 +10,7 @@ body.
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models import Note, User
@@ -25,9 +25,14 @@ def _owner_id(db: Session, owner_email: str) -> uuid.UUID:
     return user.id
 
 
-def list_notes(db: Session, owner_email: str) -> list[Note]:
+def list_notes(db: Session, owner_email: str, q: str | None = None) -> list[Note]:
     user_id = _owner_id(db, owner_email)
-    stmt = select(Note).where(Note.user_id == user_id).order_by(Note.updated_at.desc())
+    stmt = select(Note).where(Note.user_id == user_id)
+    term = q.strip() if q else ""
+    if term:
+        pattern = f"%{term}%"
+        stmt = stmt.where(or_(Note.title.ilike(pattern), Note.body.ilike(pattern)))
+    stmt = stmt.order_by(Note.updated_at.desc())
     return list(db.scalars(stmt))
 
 

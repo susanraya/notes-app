@@ -25,7 +25,8 @@ _INVALID_CREDENTIALS_DETAIL = "Credentials not accepted"
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
-    credentials: LoginRequest, db: Session = Depends(get_db)  # noqa: B008
+    credentials: LoginRequest,
+    db: Session = Depends(get_db),  # noqa: B008
 ) -> TokenResponse:
     user = db.query(User).filter(User.email == credentials.email).first()
     if user is None or not verify_password(credentials.password, user.password_hash):
